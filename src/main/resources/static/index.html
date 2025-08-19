@@ -1,38 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Node Viewer</title>
-    <meta charset="utf-8"/>
+    <meta charset="UTF-8">
+    <title>Index</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
-    <style>
-        #map {
-            height: 100vh;
-            width: 100%;
-        }
-    </style>
+    <script src="app.js" defer></script>
 </head>
 <body>
+<h1>index</h1>
+<form id="start-stop">
+    <input type="text" id="startpoint" placeholder="Start Point">
+    <input type="text" id="endpoint" placeholder="End Point">
+    <button type="submit">Start</button>
+</form>
 <div id="map"></div>
-<script>
-    const map = L.map('map').setView([48.31150149550213, 14.29344891170855], 17);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    // 🔧 Replace with your own node coordinates
-    fetch('/api/nodes')
-        .then(response => response.json())
-        .then(nodes => {
-            nodes.forEach(({ lat, lon }) => {
-                L.circleMarker([lat, lon], {
-                    radius: 3,
-                    color: 'red'
-                }).addTo(map).bindPopup(`Lat: ${lat}<br>Lon: ${lon}`);
-            });
-        });
-
-</script>
 </body>
 </html>
