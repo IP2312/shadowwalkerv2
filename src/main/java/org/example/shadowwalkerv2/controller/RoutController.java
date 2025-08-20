@@ -35,9 +35,6 @@ public class RoutController {
         GeoCoordinate start = new GeoCoordinate(startLat, startLon);
         GeoCoordinate end   = new GeoCoordinate(endLat, endLon);
 
-        System.out.println("Api");
-        System.out.println(start);
-        System.out.println(end);
 
         return navigation.findeRoute(start, end)
                 .stream()

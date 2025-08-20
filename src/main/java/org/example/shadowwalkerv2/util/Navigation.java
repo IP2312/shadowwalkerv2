@@ -20,4 +20,10 @@ public class Navigation {
 
         return routeCoordinates;
     }
+
+    public void loadRouteNodes(){
+
+    }
+
+
 }
