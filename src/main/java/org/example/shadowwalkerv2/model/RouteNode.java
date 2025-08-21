@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Data
-@AllArgsConstructor
+
 @NoArgsConstructor
 @Component
 public class RouteNode {
@@ -19,4 +19,9 @@ public class RouteNode {
     private RouteNode parentNode;
     private RouteNode childNode;
     private boolean explored;
+
+    public RouteNode(long id, GeoCoordinate coordinate) {
+        this.id = id;
+        this.coordinate = coordinate;
+    }
 }
