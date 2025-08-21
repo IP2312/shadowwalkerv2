@@ -2,7 +2,7 @@ package org.example.shadowwalkerv2.controller;
 
 import org.example.shadowwalkerv2.dto.CoordinateDTO;
 import org.example.shadowwalkerv2.model.GeoCoordinate;
-import org.example.shadowwalkerv2.util.Navigation;
+import org.example.shadowwalkerv2.service.Navigation;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -41,5 +41,6 @@ public class RoutController {
                 .map(gc -> new CoordinateDTO(gc.getLat(), gc.getLon()))
                 .toList();
     }
+
 
 }

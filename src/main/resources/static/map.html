@@ -22,7 +22,7 @@
     }).addTo(map);
 
     // 🔧 Replace with node coordinates
-    fetch('/api/nodes')
+    fetch('/api/nav')
         .then(response => response.json())
         .then(nodes => {
             nodes.forEach(({ lat, lon }) => {

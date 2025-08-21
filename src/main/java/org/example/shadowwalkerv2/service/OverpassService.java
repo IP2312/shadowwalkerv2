@@ -8,16 +8,35 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Locale;
 
 @Service
 public class OverpassService {
     private final RestTemplate restTemplate;
+    private final MapService mapService;
 
     public OverpassService() {
+        this.mapService = new MapService();
         this.restTemplate =  new RestTemplate();
     }
+
+
     public OverpassResponse loadRouts(GeoCoordinate start, GeoCoordinate goal){
-        return null;
+        HashMap<String,Double> borders = mapService.calculateBorders(start, goal);
+        String query = String.format(Locale.US, """
+            [out:json][timeout:25];
+            // Bounding Box: [South, West, North, East]
+            (
+              way(%.8f, %.8f, %.8f, %.8f)
+                ["highway"]["highway"~"footway|pedestrian|path|living_street"]
+                ["foot"!~"no|private"];
+            );
+            out body;
+            >;
+            out skel qt;
+            """, borders.get("sBorder"), borders.get("wBorder"), borders.get("nBorder"), borders.get("eBorder"));
+        return sendQuery(query);
     }
 
 

@@ -1,16 +1,23 @@
-package org.example.shadowwalkerv2.util;
+package org.example.shadowwalkerv2.service;
 
 
 import org.example.shadowwalkerv2.model.GeoCoordinate;
-import org.example.shadowwalkerv2.model.RouteNode;
+import org.example.shadowwalkerv2.model.OverpassResponse;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 
 @Service
 public class Navigation {
+    private final OverpassService overpassService;
+
+    public Navigation() {
+        this.overpassService = new OverpassService();
+    }
+
     public ArrayList<GeoCoordinate> findeRoute(GeoCoordinate start, GeoCoordinate goal){
         ArrayList<GeoCoordinate> routeCoordinates = new ArrayList<>();
+        OverpassResponse routElements = overpassService.loadRouts(start, goal);
 
         routeCoordinates.add(start);
         routeCoordinates.add(new GeoCoordinate(48.310661362874455, 14.291979911708491));
