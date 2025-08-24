@@ -27,6 +27,7 @@ public class Navigation {
         OverpassResponse routElements = overpassService.loadRouts(start, goal);
         ArrayList<RouteNode> routeNodes = new ArrayList<>();
         ArrayList<RoutWay> routs = new ArrayList<>();
+
         for (OverpassElement element : routElements.getElements()) {
             if (element.type.equals("way")) {
                 routs.add(new RoutWay(element.id, "road", (ArrayList<Long>) element.nodes));
@@ -35,13 +36,26 @@ public class Navigation {
             }
         }
 
+        if (routeNodes.isEmpty()) {
+            //TODO throw exception no nodes returned by Overpass—return empty
+            return routeCoordinates;
+        }
+
         HashMap<Long, RouteNode> nodesMap = new HashMap<>();
-        for (RouteNode node : routeNodes) {
-            nodesMap.put(node.getId(), node);
+        for (RouteNode n : routeNodes) {
+            n.setCostToReachNode(Double.POSITIVE_INFINITY);
+            n.setEstimatedCostToGoal(0.0);
+            n.setParentNode(null);
+            n.setExplored(false);
+            nodesMap.put(n.getId(), n);
         }
 
         RouteNode startNode = getClosestNode(start, routeNodes);
         RouteNode goalNode = getClosestNode(goal, routeNodes);
+        if (startNode == null || goalNode == null) {
+            //TODO ecxeption
+            return routeCoordinates;
+        }
 
         //Path finding A*
         frontier.clear();
@@ -50,7 +64,7 @@ public class Navigation {
         currentNode.setExplored(true);
         currentNode.setCostToReachNode(0);
 
-        /*int count = 0;
+        int count = 0;
         while (!currentNode.equals(goalNode)) {
             ArrayList<RoutWay> possibleRouts = getRoutsFromNode(currentNode, routs);
             ArrayList<Long> neighbourIds = findNeighboursId(currentNode, possibleRouts);
@@ -68,7 +82,7 @@ public class Navigation {
 
             System.out.println(count++);
         }
-        System.out.println(currentNode);*/
+        System.out.println(currentNode);
 
 
         System.out.println("coordinates");
