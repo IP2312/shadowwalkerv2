@@ -6,6 +6,8 @@ import org.example.shadowwalkerv2.model.*;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 
 @Service
@@ -61,11 +63,13 @@ public class Navigation {
         frontier.clear();
 
         RouteNode currentNode = startNode;
-        currentNode.setExplored(true);
+        //currentNode.setExplored(true);
         currentNode.setCostToReachNode(0);
+        startNode.setEstimatedCostToGoal(mapService.haversineDistance(startNode.getCoordinate(), goalNode.getCoordinate()));
+        frontier.addNode(startNode);
 
         int count = 0;
-        while (!currentNode.equals(goalNode)) {
+        while (!frontier.isEmpty()) {
             ArrayList<RoutWay> possibleRouts = getRoutsFromNode(currentNode, routs);
             ArrayList<Long> neighbourIds = findNeighboursId(currentNode, possibleRouts);
 
@@ -147,6 +151,15 @@ public class Navigation {
         neighbour.setCostToReachNode(coveredDistance);
         neighbour.setEstimatedCostToGoal(mapService.haversineDistance(neighbour.getCoordinate(), goal.getCoordinate()));
 
+    }
+
+    private ArrayList<RouteNode> reconstructPath(RouteNode goal) {
+        ArrayList<RouteNode> path = new ArrayList<>();
+        for (RouteNode n = goal; n != null; n = n.getParentNode()) {
+            path.add(n); // prepend
+        }
+        Collections.reverse(path);
+        return path;
     }
 
 }

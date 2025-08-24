@@ -15,10 +15,15 @@ public class Frontier {
     public void clear(){
         frontier.clear();
     }
+    public boolean isEmpty(){
+        return frontier.isEmpty();
+    }
 
     public void addNode(RouteNode node){
-        if (!frontier.contains(node) && !node.isExplored())
-        frontier.add(node);
+        if (!frontier.contains(node) && !node.isExplored()){
+            frontier.add(node);
+        }
+
     }
 
 
