@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const endInput = document.getElementById("endpoint");
 
 
-    const map = L.map('map').setView([48.31150149550213, 14.29344891170855], 14);
+    const map = L.map('map').setView([48.31150149550213, 14.29344891170855], 15);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
@@ -35,7 +35,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const url = `/api/nodes?startLat=${start.lat}&startLon=${start.lon}&endLat=${end.lat}&endLon=${end.lon}`;
-        const res = await fetch(url);
+        //http://localhost:8080/api/nodes?startLat=48.310548924222935&startLon=14.291554861045903&endLat=48.31400826041287&endLon=14.295524522445557
+        // http://localhost:8080/api/nodes?startLat=48.310712&startLon=14.292525&endLat=48.312598&endLon=14.295000
+
+                const res = await fetch(url);
 
         if (!res.ok) {
             alert("Failed to fetch route.");

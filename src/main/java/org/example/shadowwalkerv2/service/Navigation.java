@@ -43,10 +43,14 @@ public class Navigation {
         RouteNode startNode = getClosestNode(start, routeNodes);
         RouteNode goalNode = getClosestNode(goal, routeNodes);
 
+        //Path finding A*
+        frontier.clear();
+
         RouteNode currentNode = startNode;
         currentNode.setExplored(true);
         currentNode.setCostToReachNode(0);
 
+        /*int count = 0;
         while (!currentNode.equals(goalNode)) {
             ArrayList<RoutWay> possibleRouts = getRoutsFromNode(currentNode, routs);
             ArrayList<Long> neighbourIds = findNeighboursId(currentNode, possibleRouts);
@@ -55,15 +59,19 @@ public class Navigation {
                 RouteNode neighbour = nodesMap.get(neighbourId);
                 if (!neighbour.isExplored()){
                     calculateCost(currentNode, neighbour, goalNode);
-
+                    frontier.addNode(neighbour);
                 }
-
             }
+            currentNode.setChildNode(frontier.removeNode());
+            currentNode.getChildNode().setParentNode(currentNode);
+            currentNode = currentNode.getChildNode();
+
+            System.out.println(count++);
         }
+        System.out.println(currentNode);*/
 
 
-
-
+        System.out.println("coordinates");
         routeCoordinates.add(start);
         routeCoordinates.add(new GeoCoordinate(48.310661362874455, 14.291979911708491));
         routeCoordinates.add(new GeoCoordinate(48.3111889542115, 14.29258036938026));
@@ -123,7 +131,7 @@ public class Navigation {
         double coveredDistance = currentNode.getCostToReachNode();
         coveredDistance += mapService.haversineDistance(currentNode.getCoordinate(), neighbour.getCoordinate());
         neighbour.setCostToReachNode(coveredDistance);
-        neighbour.setEstimatedCostToGaol(mapService.haversineDistance(neighbour.getCoordinate(), goal.getCoordinate()));
+        neighbour.setEstimatedCostToGoal(mapService.haversineDistance(neighbour.getCoordinate(), goal.getCoordinate()));
 
     }
 

@@ -1,7 +1,6 @@
 package org.example.shadowwalkerv2.model;
 
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -15,7 +14,7 @@ public class RouteNode {
     private GeoCoordinate coordinate;
 
     private double costToReachNode;
-    private double estimatedCostToGaol;
+    private double estimatedCostToGoal;
     private RouteNode parentNode;
     private RouteNode childNode;
     private boolean explored;
@@ -23,5 +22,9 @@ public class RouteNode {
     public RouteNode(long id, GeoCoordinate coordinate) {
         this.id = id;
         this.coordinate = coordinate;
+    }
+
+    public double getFCost(){
+        return estimatedCostToGoal + costToReachNode;
     }
 }
