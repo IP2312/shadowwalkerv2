@@ -5,10 +5,7 @@ import org.example.shadowwalkerv2.dto.OverpassElement;
 import org.example.shadowwalkerv2.model.*;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
 
 @Service
 public class Navigation {
@@ -62,40 +59,46 @@ public class Navigation {
         //Path finding A*
         frontier.clear();
 
-        RouteNode currentNode = startNode;
+
         //currentNode.setExplored(true);
-        currentNode.setCostToReachNode(0);
+        startNode.setCostToReachNode(0);
         startNode.setEstimatedCostToGoal(mapService.haversineDistance(startNode.getCoordinate(), goalNode.getCoordinate()));
         frontier.addNode(startNode);
 
-        int count = 0;
+
         while (!frontier.isEmpty()) {
+            RouteNode currentNode = frontier.removeNode();
+            //Todo exception
+            if (currentNode == null) break;
+            if (currentNode.equals(goalNode)){
+                ArrayList<RouteNode> path = reconstructPath(currentNode);
+                for (RouteNode rn : path) routeCoordinates.add(rn.getCoordinate());
+                return routeCoordinates;
+            }
             ArrayList<RoutWay> possibleRouts = getRoutsFromNode(currentNode, routs);
-            ArrayList<Long> neighbourIds = findNeighboursId(currentNode, possibleRouts);
+            LinkedHashSet<Long> neighbourIds = findNeighboursId(currentNode, possibleRouts);
 
             for (Long neighbourId : neighbourIds) {
                 RouteNode neighbour = nodesMap.get(neighbourId);
                 if (!neighbour.isExplored()){
-                    calculateCost(currentNode, neighbour, goalNode);
-                    frontier.addNode(neighbour);
+                    //calculateCost(currentNode, neighbour, goalNode);
+                    double distanceToNeighbour = mapService.haversineDistance(currentNode.getCoordinate(), neighbour.getCoordinate());
+                    double tentativeG = currentNode.getCostToReachNode() + distanceToNeighbour;
+
+                    //prevent choosing a worse path
+                    if (tentativeG < neighbour.getCostToReachNode()) {
+                        neighbour.setParentNode(currentNode);
+                        neighbour.setCostToReachNode(tentativeG);
+                        neighbour.setEstimatedCostToGoal(mapService.haversineDistance(neighbour.getCoordinate(), goalNode.getCoordinate())
+                        );
+                        frontier.addNode(neighbour);
+                    }
                 }
             }
-            currentNode.setChildNode(frontier.removeNode());
-            currentNode.getChildNode().setParentNode(currentNode);
-            currentNode = currentNode.getChildNode();
 
-            System.out.println(count++);
         }
-        System.out.println(currentNode);
-
-
-        System.out.println("coordinates");
-        routeCoordinates.add(start);
-        routeCoordinates.add(new GeoCoordinate(48.310661362874455, 14.291979911708491));
-        routeCoordinates.add(new GeoCoordinate(48.3111889542115, 14.29258036938026));
-        routeCoordinates.add(goal);
-
-
+        //todo exception
+        System.out.println("no Path found");
         return routeCoordinates;
     }
 
@@ -125,8 +128,8 @@ public class Navigation {
         return newRouts;
     }
 
-    public ArrayList<Long> findNeighboursId(RouteNode currentNode, ArrayList<RoutWay> possibleRouts) {
-        ArrayList<Long> neighboursId = new ArrayList<>();
+    public LinkedHashSet<Long> findNeighboursId(RouteNode currentNode, ArrayList<RoutWay> possibleRouts) {
+        LinkedHashSet<Long> neighboursId = new LinkedHashSet<>();
 
         for (RoutWay rout : possibleRouts) {
             for (int i = 0; i < rout.getNodesId().size(); i++) {

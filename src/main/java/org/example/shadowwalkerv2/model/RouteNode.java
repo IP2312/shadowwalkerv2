@@ -16,7 +16,6 @@ public class RouteNode {
     private double costToReachNode;
     private double estimatedCostToGoal;
     private RouteNode parentNode;
-    private RouteNode childNode;
     private boolean explored;
 
     public RouteNode(long id, GeoCoordinate coordinate) {
