@@ -1,5 +1,6 @@
 package org.example.shadowwalkerv2.service;
 
+import org.example.shadowwalkerv2.model.BuildingNode;
 import org.example.shadowwalkerv2.model.BuildingWay;
 import org.example.shadowwalkerv2.model.GeoCoordinate;
 import org.example.shadowwalkerv2.model.RouteNode;
@@ -8,15 +9,23 @@ import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 
 @Service
 public class SunService {
+    private final GeometryService geometryService;
 
-    public void checkForShade(RouteNode currentNode, ArrayList<BuildingWay> buildings,ZonedDateTime time) {
-        GeoCoordinate RayEnd = calculateLineForSunray(currentNode, time);
-        GeoCoordinate RayStart = currentNode.getCoordinate();
+    public SunService(GeometryService geometryService) {
+        this.geometryService = geometryService;
+    }
+
+    public void checkForShade(RouteNode currentNode, ArrayList<BuildingWay> buildings, LinkedHashSet<BuildingNode> buildingNodes, ZonedDateTime time) {
+        GeoCoordinate rayEnd = calculateLineForSunray(currentNode, time);
+        GeoCoordinate rayStart = currentNode.getCoordinate();
+        double azimuth = getAzimuth(rayStart.getLat(),rayStart.getLon(),time);
+        double elevation = getElevation(rayStart.getLat(),rayStart.getLon(),time);
         for (BuildingWay buildingWay : buildings) {
-            intersection.intersection(RayStart, RayEnd, buildingWay, buildingNodes);
+            geometryService.intersection(rayStart, rayEnd, buildingWay, buildingNodes, azimuth, elevation);
 
         }
     }
