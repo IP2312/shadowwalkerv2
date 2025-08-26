@@ -36,11 +36,7 @@ public class RoutController {
         GeoCoordinate end   = new GeoCoordinate(endLat, endLon);
 
 
-     /*   System.out.println("Map from Restcontroller");
-        return List.of(
-                new CoordinateDTO(48.310548924222935, 14.291554861045903),
-                new CoordinateDTO(48.31400826041287, 14.295524522445557)
-        );*/
+
        return navigation.findeRoute(start, end)
                 .stream()
                 .map(gc -> new CoordinateDTO(gc.getLat(), gc.getLon()))

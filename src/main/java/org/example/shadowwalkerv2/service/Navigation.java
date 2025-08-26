@@ -20,7 +20,7 @@ public class Navigation {
 
     }
 
-    public ArrayList<GeoCoordinate> findeRoute(GeoCoordinate start, GeoCoordinate goal){
+    public ArrayList<GeoCoordinate> findeRoute(GeoCoordinate start, GeoCoordinate goal) {
         ArrayList<GeoCoordinate> routeCoordinates = new ArrayList<>();
 
         OverpassResponse routElements = overpassService.loadRouts(start, goal);
@@ -34,6 +34,24 @@ public class Navigation {
                 routeNodes.add(new RouteNode(element.id, new GeoCoordinate(element.lat, element.lon)));
             }
         }
+
+        OverpassResponse buildingElements = overpassService.loadBuildings(start, goal);
+        ArrayList<BuildingNode> buildingNodes = new ArrayList<>();
+        ArrayList<BuildingWay> buildings = new ArrayList<>();
+
+        for (OverpassElement element : buildingElements.getElements()) {
+            if (element.type.equals("way")) {
+                BuildingWay newBuilding = new BuildingWay(element.id, "building", (ArrayList<Long>) element.nodes);
+                newBuilding.setHeight(element.tags.get("height"));
+                newBuilding.setLevels(element.tags.get("building:levels"));
+                buildings.add(newBuilding);
+
+
+            } else if (element.type.equals("node")) {
+                buildingNodes.add(new BuildingNode(element.id, new GeoCoordinate(element.lat, element.lon)));
+            }
+        }
+
 
         if (routeNodes.isEmpty()) {
             //TODO throw exception no nodes returned by Overpass—return empty
@@ -59,8 +77,6 @@ public class Navigation {
         //Path finding A*
         frontier.clear();
 
-
-
         startNode.setCostToReachNode(0);
         startNode.setEstimatedCostToGoal(mapService.haversineDistance(startNode.getCoordinate(), goalNode.getCoordinate()));
         frontier.addNode(startNode);
@@ -70,9 +86,15 @@ public class Navigation {
             RouteNode currentNode = frontier.removeNode();
             //Todo exception
             if (currentNode == null) break;
-            if (currentNode.equals(goalNode)){
+            if (currentNode.equals(goalNode)) {
                 ArrayList<RouteNode> path = reconstructPath(currentNode);
-                for (RouteNode rn : path) routeCoordinates.add(rn.getCoordinate());
+
+
+                for (RouteNode rn : path) {
+
+
+                    routeCoordinates.add(rn.getCoordinate());
+                }
                 return routeCoordinates;
             }
             ArrayList<RoutWay> possibleRouts = getRoutsFromNode(currentNode, routs);
@@ -80,7 +102,7 @@ public class Navigation {
 
             for (Long neighbourId : neighbourIds) {
                 RouteNode neighbour = nodesMap.get(neighbourId);
-                if (!neighbour.isExplored()){
+                if (!neighbour.isExplored()) {
                     //calculateCost(currentNode, neighbour, goalNode);
                     double distanceToNeighbour = mapService.haversineDistance(currentNode.getCoordinate(), neighbour.getCoordinate());
                     double tentativeG = currentNode.getCostToReachNode() + distanceToNeighbour;
@@ -133,7 +155,7 @@ public class Navigation {
 
         for (RoutWay rout : possibleRouts) {
             for (int i = 0; i < rout.getNodesId().size(); i++) {
-                if (rout.getNodesId().get(i) == currentNode.getId()){
+                if (rout.getNodesId().get(i) == currentNode.getId()) {
                     if (i > 0) {
                         neighboursId.add(rout.getNodesId().get(i - 1));
                     }
@@ -147,7 +169,7 @@ public class Navigation {
         return neighboursId;
     }
 
-    public void calculateCost(RouteNode currentNode, RouteNode neighbour, RouteNode goal){
+    public void calculateCost(RouteNode currentNode, RouteNode neighbour, RouteNode goal) {
 
         double coveredDistance = currentNode.getCostToReachNode();
         coveredDistance += mapService.haversineDistance(currentNode.getCoordinate(), neighbour.getCoordinate());

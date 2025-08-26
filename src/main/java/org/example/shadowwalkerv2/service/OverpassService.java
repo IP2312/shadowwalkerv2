@@ -22,6 +22,8 @@ public class OverpassService {
     }
 
 
+
+
     public OverpassResponse loadRouts(GeoCoordinate start, GeoCoordinate goal){
         HashMap<String,Double> borders = mapService.calculateBorders(start, goal);
         String query = String.format(Locale.US, """
@@ -38,6 +40,23 @@ public class OverpassService {
             """, borders.get("sBorder"), borders.get("wBorder"), borders.get("nBorder"), borders.get("eBorder"));
         return sendQuery(query);
     }
+    public OverpassResponse loadBuildings(GeoCoordinate start, GeoCoordinate goal) {
+        HashMap<String,Double> borders = mapService.calculateBorders(start, goal);
+        String query = String.format(Locale.US, """
+                [out:json][timeout:25];
+                (
+                    way(%.8f, %.8f, %.8f, %.8f) ["building"]
+                    (if: t["height"] || t["building:levels"]);
+                );
+                out body;
+                >;
+                out skel qt;
+                """, borders.get("sBorder"), borders.get("wBorder"), borders.get("nBorder"), borders.get("eBorder"));
+        return sendQuery(query);
+
+    }
+
+
 
 
     private OverpassResponse sendQuery(String query) {
