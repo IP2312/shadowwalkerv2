@@ -52,7 +52,7 @@ public class Navigation {
         RouteNode startNode = getClosestNode(start, routeNodes);
         RouteNode goalNode = getClosestNode(goal, routeNodes);
         if (startNode == null || goalNode == null) {
-            //TODO ecxeption
+            //TODO exception
             return routeCoordinates;
         }
 
@@ -60,7 +60,7 @@ public class Navigation {
         frontier.clear();
 
 
-        //currentNode.setExplored(true);
+
         startNode.setCostToReachNode(0);
         startNode.setEstimatedCostToGoal(mapService.haversineDistance(startNode.getCoordinate(), goalNode.getCoordinate()));
         frontier.addNode(startNode);
