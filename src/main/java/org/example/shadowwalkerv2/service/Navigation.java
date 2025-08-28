@@ -5,6 +5,7 @@ import org.example.shadowwalkerv2.dto.OverpassElement;
 import org.example.shadowwalkerv2.model.*;
 import org.springframework.stereotype.Service;
 
+import java.time.ZonedDateTime;
 import java.util.*;
 
 @Service
@@ -12,8 +13,10 @@ public class Navigation {
     private final OverpassService overpassService;
     private final MapService mapService;
     private final Frontier frontier;
+    private final SunService sunService;
 
-    public Navigation() {
+    public Navigation(SunService sunService) {
+        this.sunService = sunService;
         this.overpassService = new OverpassService();
         this.mapService = new MapService();
         this.frontier = new Frontier();
@@ -36,7 +39,7 @@ public class Navigation {
         }
 
         OverpassResponse buildingElements = overpassService.loadBuildings(start, goal);
-        ArrayList<BuildingNode> buildingNodes = new ArrayList<>();
+        LinkedHashSet<BuildingNode> buildingNodes = new LinkedHashSet<>();
         ArrayList<BuildingWay> buildings = new ArrayList<>();
 
         for (OverpassElement element : buildingElements.getElements()) {
@@ -90,7 +93,7 @@ public class Navigation {
 
                 for (RouteNode rn : path) {
 
-
+                    sunService.checkForShade(rn,buildings,buildingNodes, ZonedDateTime.now());
                     routeCoordinates.add(rn.getCoordinate());
                 }
                 return routeCoordinates;
