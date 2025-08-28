@@ -53,11 +53,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const latlngs = nodes.map(n => [n.lat, n.lon]);
 
-        // Markers (optional)
+// after: const latlngs = nodes.map(n => [n.lat, n.lon]);
+
+        if (latlngs.length < 2) {
+            alert("Route is too short to draw.");
+            return;
+        }
+
+// remove previous route (markers + line)
+        if (routeLayer) {
+            routeLayer.remove();
+            routeLayer = null;
+        }
+
+// keep everything (line + markers) together
+        routeLayer = L.layerGroup().addTo(map);
+
+// the line between nodes
+        const line = L.polyline(latlngs, {
+            weight: 4,
+            opacity: 0.9
+        }).addTo(routeLayer);
+
+// (optional) fit map to the route
+        map.fitBounds(line.getBounds());
+
+// (optional) start/end markers
+        L.marker(latlngs[0]).addTo(routeLayer).bindPopup("Start");
+        L.marker(latlngs[latlngs.length - 1]).addTo(routeLayer).bindPopup("End");
+
+// (optional) tiny markers for each node
         latlngs.forEach(([lat, lon]) =>
-            L.circleMarker([lat, lon], { radius: 3, color: "red" })
-                .addTo(map)
+            L.circleMarker([lat, lon], { radius: 3 })
+                .addTo(routeLayer)
                 .bindPopup(`Lat: ${lat}<br>Lon: ${lon}`)
+
         );
     })
 })
