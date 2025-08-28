@@ -61,7 +61,6 @@ public class BuildingWay implements Way {
             this.height = Integer.parseInt(String.valueOf(height));
         }catch (NumberFormatException e){
             this.height = 0;
-            System.out.println("Height is not a number");
         }
     }
 
@@ -69,8 +68,7 @@ public class BuildingWay implements Way {
         try{
             this.levels = Integer.parseInt(String.valueOf(levels));
         }catch (NumberFormatException e){
-
-            System.out.println("Levels is not a number");
+            this.levels = 0;
         }
     }
 

@@ -90,12 +90,19 @@ public class Navigation {
             if (currentNode.equals(goalNode)) {
                 ArrayList<RouteNode> path = reconstructPath(currentNode);
 
-
+                double nodesInSun = 0;
+                double nodesInShade = 0;
                 for (RouteNode rn : path) {
-
-                    sunService.checkForShade(rn,buildings,buildingNodes, ZonedDateTime.now());
+                    if (sunService.checkForShade(rn,buildings,buildingNodes, ZonedDateTime.now().plusHours(7))){
+                        nodesInShade++;
+                    }
+                    else {
+                        nodesInSun++;
+                    }
                     routeCoordinates.add(rn.getCoordinate());
                 }
+                double shadow = nodesInShade/(nodesInShade + nodesInSun) * 100;
+                System.out.println("Shadow:" + shadow + "%");
                 return routeCoordinates;
             }
             ArrayList<RoutWay> possibleRouts = getRoutsFromNode(currentNode, routs);

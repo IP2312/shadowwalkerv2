@@ -19,23 +19,28 @@ public class SunService {
         this.geometryService = geometryService;
     }
 
-    public void checkForShade(RouteNode currentNode, ArrayList<BuildingWay> buildings, LinkedHashSet<BuildingNode> buildingNodes, ZonedDateTime time) {
+    public boolean checkForShade(RouteNode currentNode, ArrayList<BuildingWay> buildings, LinkedHashSet<BuildingNode> buildingNodes, ZonedDateTime time) {
         GeoCoordinate rayEnd = calculateLineForSunray(currentNode, time);
         GeoCoordinate rayStart = currentNode.getCoordinate();
         double azimuth = getAzimuth(rayStart.getLat(),rayStart.getLon(),time);
         double elevation = getElevation(rayStart.getLat(),rayStart.getLon(),time);
+        boolean shade  = false;
         for (BuildingWay buildingWay : buildings) {
-            geometryService.intersection(rayStart, rayEnd, buildingWay, buildingNodes,time, azimuth, elevation);
+            if (
+            geometryService.intersection(rayStart, rayEnd, buildingWay, buildingNodes,time, azimuth, elevation)){
+                shade = true;
+            }
 
         }
+        return shade;
     }
 
     public GeoCoordinate calculateLineForSunray(RouteNode node, ZonedDateTime time){
         double lat = node.getCoordinate().getLat();
         double lon = node.getCoordinate().getLon();
         double azimuth = getAzimuth(lat,lon, time);
-        System.out.println("Azimuth: " + azimuth);
-        System.out.println("Elevation" + getElevation(lat,lon,time));
+        //System.out.println("Azimuth: " + azimuth);
+        //System.out.println("Elevation" + getElevation(lat,lon,time));
         double distanceMeters = 200;
         double R = 6371000.0; // Earth radius in meters
         double bearing = Math.toRadians(azimuth);

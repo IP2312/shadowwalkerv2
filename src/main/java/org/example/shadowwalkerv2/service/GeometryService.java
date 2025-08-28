@@ -21,7 +21,7 @@ public class GeometryService {
         this.mapService = mapService;
     }
 
-    public void intersection(GeoCoordinate start, GeoCoordinate end, BuildingWay building, LinkedHashSet<BuildingNode> nodes, ZonedDateTime time, double azimuth, double elevation) {
+    public boolean intersection(GeoCoordinate start, GeoCoordinate end, BuildingWay building, LinkedHashSet<BuildingNode> nodes, ZonedDateTime time, double azimuth, double elevation) {
 
         GeometryFactory gf = new GeometryFactory();
 
@@ -35,7 +35,7 @@ public class GeometryService {
         List<Long> ids = building.getNodesId();
         if (ids == null || ids.size() < 3) {
             System.out.println("Not enough vertices to form a polygon");
-            return;
+            return false;
         }
 
         // Ensure ring is closed (first id == last id)
@@ -52,7 +52,7 @@ public class GeometryService {
             BuildingNode bn = nodeIndex.get(nid);
             if (bn == null || bn.getCoordinate() == null) {
                 System.out.println("Missing node for id: " + nid);
-                return;
+                return false;
             }
             double lat = bn.getCoordinate().getLat();
             double lon = bn.getCoordinate().getLon();
@@ -64,7 +64,7 @@ public class GeometryService {
             polygon = gf.createPolygon(poly);
         } catch (IllegalArgumentException e) {
             System.out.println("Invalid polygon geometry: " + e.getMessage());
-            return;
+            return false;
         }
 
         // Build line (lon, lat)
@@ -90,19 +90,13 @@ public class GeometryService {
              heightSun = calculateHeightIncrease(distance, elevation);
              buildingHeight = getBuildingHeight(building);
 
-            System.out.println("Sun: " + heightSun);
-            System.out.println("Building: " + buildingHeight);
+            //System.out.println("Sun: " + heightSun);
+            //System.out.println("Building: " + buildingHeight);
         }
 
 
-
-        if (buildingHeight > heightSun){
-            System.out.println("In the Shadow!!");
-        }
-        /*else {
-            System.out.println("In the sun");
-        }*/
-
+        //System.out.println("In the Shadow!!");
+        return buildingHeight > heightSun;
     }
 
 
