@@ -77,24 +77,31 @@ public class GeometryService {
         boolean intersects = polygon.intersects(line);
         Geometry intersection = intersects ? polygon.intersection(line) : null;
 
-        System.out.println("Intersects? " + intersects);
+       /* System.out.println("Intersects? " + intersects);
         System.out.println("Intersection geometry: " + (intersection != null ? intersection : "—"));
-        System.out.println("Distance: ");
-        double distance = mapService.haversineDistance(start, new GeoCoordinate(intersection.getCoordinate().y, intersection.getCoordinate().x));
-        //TODO time
-        double heightSun = calculateHeightIncrease(distance, elevation);
-        double buildingHeight = getBuildingHeight(building);
+        System.out.println("Distance: ");*/
 
-        System.out.println("Sun: " + heightSun);
-        System.out.println("Building: " + buildingHeight);
+
+        //Todo handle no intersection
+        double heightSun = 0;
+        double buildingHeight = 0;
+        if (intersects){
+            double distance = mapService.haversineDistance(start, new GeoCoordinate(intersection.getCoordinate().y, intersection.getCoordinate().x));
+             heightSun = calculateHeightIncrease(distance, elevation);
+             buildingHeight = getBuildingHeight(building);
+
+            System.out.println("Sun: " + heightSun);
+            System.out.println("Building: " + buildingHeight);
+        }
+
 
 
         if (buildingHeight > heightSun){
             System.out.println("In the Shadow!!");
         }
-        else {
+        /*else {
             System.out.println("In the sun");
-        }
+        }*/
 
     }
 
