@@ -25,7 +25,7 @@ public class SunService {
         double azimuth = getAzimuth(rayStart.getLat(),rayStart.getLon(),time);
         double elevation = getElevation(rayStart.getLat(),rayStart.getLon(),time);
         for (BuildingWay buildingWay : buildings) {
-            geometryService.intersection(rayStart, rayEnd, buildingWay, buildingNodes, azimuth, elevation);
+            geometryService.intersection(rayStart, rayEnd, buildingWay, buildingNodes,time, azimuth, elevation);
 
         }
     }

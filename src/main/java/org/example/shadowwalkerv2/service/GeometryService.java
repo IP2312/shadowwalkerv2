@@ -82,10 +82,10 @@ public class GeometryService {
         System.out.println("Distance: ");
         double distance = mapService.haversineDistance(start, new GeoCoordinate(intersection.getCoordinate().y, intersection.getCoordinate().x));
         //TODO time
-        double heightSun = calculateHeightIncrease(distance, getElevation(start.lat,start.lon,time));
+        double heightSun = calculateHeightIncrease(distance, elevation);
         double buildingHeight = getBuildingHeight(building);
 
-        System.out.println("Sunh: " + heightSun);
+        System.out.println("Sun: " + heightSun);
         System.out.println("Building: " + buildingHeight);
 
 

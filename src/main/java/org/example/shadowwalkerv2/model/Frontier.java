@@ -19,7 +19,7 @@ public class Frontier {
     }
 
     public void addNode(RouteNode node){
-        if (!frontier.contains(node) && !node.isExplored()){
+        if (!frontier.contains(node)){
             frontier.add(node);
         }
 

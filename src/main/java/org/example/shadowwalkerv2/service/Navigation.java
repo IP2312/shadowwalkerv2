@@ -45,8 +45,6 @@ public class Navigation {
                 newBuilding.setHeight(element.tags.get("height"));
                 newBuilding.setLevels(element.tags.get("building:levels"));
                 buildings.add(newBuilding);
-
-
             } else if (element.type.equals("node")) {
                 buildingNodes.add(new BuildingNode(element.id, new GeoCoordinate(element.lat, element.lon)));
             }
