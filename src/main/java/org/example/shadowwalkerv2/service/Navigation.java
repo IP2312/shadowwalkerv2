@@ -24,6 +24,8 @@ public class Navigation {
     }
 
     public ArrayList<GeoCoordinate> findeRoute(GeoCoordinate start, GeoCoordinate goal) {
+        //todo get time from frontend
+        ZonedDateTime time = ZonedDateTime.now();
         ArrayList<GeoCoordinate> routeCoordinates = new ArrayList<>();
 
         OverpassResponse routElements = overpassService.loadRouts(start, goal);
@@ -93,7 +95,7 @@ public class Navigation {
                 double nodesInSun = 0;
                 double nodesInShade = 0;
                 for (RouteNode rn : path) {
-                    if (sunService.checkForShade(rn,buildings,buildingNodes, ZonedDateTime.now().plusHours(7))){
+                    if (sunService.checkForShade(rn,buildings,buildingNodes, time)){
                         nodesInShade++;
                     }
                     else {

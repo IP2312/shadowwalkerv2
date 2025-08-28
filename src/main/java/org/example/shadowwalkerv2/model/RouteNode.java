@@ -17,6 +17,8 @@ public class RouteNode {
     private double estimatedCostToGoal;
     private RouteNode parentNode;
     private boolean explored;
+    private int shadedCount = 0;
+    private int totalCount = 0;
 
     public RouteNode(long id, GeoCoordinate coordinate) {
         this.id = id;
@@ -26,4 +28,6 @@ public class RouteNode {
     public double getFCost(){
         return estimatedCostToGoal + costToReachNode;
     }
+
+
 }
