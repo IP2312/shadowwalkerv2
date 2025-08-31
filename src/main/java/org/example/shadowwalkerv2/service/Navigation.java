@@ -188,6 +188,7 @@ public class Navigation {
 
     }
 
+
     private ArrayList<RouteNode> reconstructPath(RouteNode goal) {
         ArrayList<RouteNode> path = new ArrayList<>();
         for (RouteNode n = goal; n != null; n = n.getParentNode()) {
