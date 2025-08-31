@@ -25,7 +25,7 @@ public class Navigation {
 
     public ArrayList<GeoCoordinate> findeRoute(GeoCoordinate start, GeoCoordinate goal) {
         //todo get time from frontend
-        ZonedDateTime time = ZonedDateTime.now();
+        ZonedDateTime time = ZonedDateTime.now().minusHours(4);
         ArrayList<GeoCoordinate> routeCoordinates = new ArrayList<>();
 
         OverpassResponse routElements = overpassService.loadRouts(start, goal);

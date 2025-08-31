@@ -42,6 +42,7 @@ public class OverpassService {
     }
     public OverpassResponse loadBuildings(GeoCoordinate start, GeoCoordinate goal) {
         HashMap<String,Double> borders = mapService.calculateBorders(start, goal);
+        //todo add relational buildings
         String query = String.format(Locale.US, """
                 [out:json][timeout:25];
                 (
