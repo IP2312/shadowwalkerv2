@@ -25,7 +25,7 @@ public class Navigation {
 
     public ArrayList<GeoCoordinate> findeRoute(GeoCoordinate start, GeoCoordinate goal) {
         //todo get time from frontend
-        ZonedDateTime time = ZonedDateTime.now().minusHours(4);
+        ZonedDateTime time = ZonedDateTime.now();
         ArrayList<GeoCoordinate> routeCoordinates = new ArrayList<>();
 
         OverpassResponse routElements = overpassService.loadRouts(start, goal);
@@ -82,7 +82,7 @@ public class Navigation {
 
         startNode.setCostToReachNode(0);
         startNode.setEstimatedCostToGoal(mapService.haversineDistance(startNode.getCoordinate(), goalNode.getCoordinate()));
-        frontier.addNode(startNode);
+        frontier.addOrUpdateNode(startNode);
 
 
         while (!frontier.isEmpty()) {
@@ -123,7 +123,7 @@ public class Navigation {
                         neighbour.setCostToReachNode(tentativeG);
                         neighbour.setEstimatedCostToGoal(mapService.haversineDistance(neighbour.getCoordinate(), goalNode.getCoordinate())
                         );
-                        frontier.addNode(neighbour);
+                        frontier.addOrUpdateNode(neighbour);
                     }
                 }
             }
