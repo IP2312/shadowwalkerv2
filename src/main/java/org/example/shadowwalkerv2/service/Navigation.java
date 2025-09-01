@@ -93,11 +93,16 @@ public class Navigation {
                         id -> sunService.checkForShade(rn, buildings, buildingNodes, time)
                 );
 
+        record Key (double g, double shade){}
+        HashMap<Long,Key> bestKey = new HashMap<>();
+
         startNode.setCostToReachNode(0);
         startNode.setEstimatedCostToGoal(mapService.haversineDistance(startNode.getCoordinate(), goalNode.getCoordinate()));
         startNode.setTotalCount(1);
         startNode.setShadedCount(isShaded.apply(startNode) ? 1 : 0);
+        bestKey.put(startNode.getId(), new Key(startNode.getCostToReachNode(),startNode.shadeRatio()));
         frontier.addOrUpdateNode(startNode);
+        RouteNode bestGoal = null;
 
 
         while (!frontier.isEmpty()) {
