@@ -50,7 +50,7 @@ public class Frontier {
 
         if (nextNode != null){
             pg.remove(nextNode);
-            nextNode.setExplored(true);
+            //nextNode.setExplored(true); 
         }
         return nextNode;
     }

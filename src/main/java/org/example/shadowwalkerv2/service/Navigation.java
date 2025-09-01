@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Function;
 
 @Service
 public class Navigation {
@@ -24,7 +25,8 @@ public class Navigation {
     }
 
     public ArrayList<GeoCoordinate> findeRoute(GeoCoordinate start, GeoCoordinate goal) {
-        //todo get time from frontend
+        //todo get time from frontend and set Targets
+        double target = 0.80;
         ZonedDateTime time = ZonedDateTime.now();
         ArrayList<GeoCoordinate> routeCoordinates = new ArrayList<>();
 
@@ -67,8 +69,12 @@ public class Navigation {
             n.setEstimatedCostToGoal(0.0);
             n.setParentNode(null);
             n.setExplored(false);
+            n.setTotalCount(0);
+            n.setShadedCount(0);
             nodesMap.put(n.getId(), n);
         }
+
+
 
         RouteNode startNode = getClosestNode(start, routeNodes);
         RouteNode goalNode = getClosestNode(goal, routeNodes);
@@ -80,8 +86,17 @@ public class Navigation {
         //Path finding A*
         frontier.clear();
 
+        Map<Long, Boolean> shadedCache = new HashMap<>(routeNodes.size() * 2);
+        Function<RouteNode, Boolean> isShaded = rn ->
+                shadedCache.computeIfAbsent(
+                        rn.getId(),
+                        id -> sunService.checkForShade(rn, buildings, buildingNodes, time)
+                );
+
         startNode.setCostToReachNode(0);
         startNode.setEstimatedCostToGoal(mapService.haversineDistance(startNode.getCoordinate(), goalNode.getCoordinate()));
+        startNode.setTotalCount(1);
+        startNode.setShadedCount(isShaded.apply(startNode) ? 1 : 0);
         frontier.addOrUpdateNode(startNode);
 
 
