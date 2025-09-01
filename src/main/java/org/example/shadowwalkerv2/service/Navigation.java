@@ -93,16 +93,16 @@ public class Navigation {
                         id -> sunService.checkForShade(rn, buildings, buildingNodes, time)
                 );
 
-        record Key (double g, double shade){}
-        HashMap<Long,Key> bestKey = new HashMap<>();
+        //record Key (double g, double shade){}
+        //HashMap<Long,Key> bestKey = new HashMap<>();
 
         startNode.setCostToReachNode(0);
         startNode.setEstimatedCostToGoal(mapService.haversineDistance(startNode.getCoordinate(), goalNode.getCoordinate()));
         startNode.setTotalCount(1);
         startNode.setShadedCount(isShaded.apply(startNode) ? 1 : 0);
-        bestKey.put(startNode.getId(), new Key(startNode.getCostToReachNode(),startNode.shadeRatio()));
+        //bestKey.put(startNode.getId(), new Key(startNode.getCostToReachNode(),startNode.shadeRatio()));
         frontier.addOrUpdateNode(startNode);
-        RouteNode bestGoal = null;
+        //RouteNode bestGoal = null;
 
 
         while (!frontier.isEmpty()) {
@@ -132,12 +132,13 @@ public class Navigation {
 
             for (Long neighbourId : neighbourIds) {
                 RouteNode neighbour = nodesMap.get(neighbourId);
-                if (!neighbour.isExplored()) {
+                //todo null
+                if (currentNode.getParentNode() == null || !currentNode.getParentNode().equals(neighbour)) {
                     //calculateCost(currentNode, neighbour, goalNode);
                     double distanceToNeighbour = mapService.haversineDistance(currentNode.getCoordinate(), neighbour.getCoordinate());
                     double tentativeG = currentNode.getCostToReachNode() + distanceToNeighbour;
 
-                    //prevent choosing a worse path
+                    //prevent choosing a worse path if neighbour not explored -> POSITIVE_INFINITY or previous explored path worse
                     if (tentativeG < neighbour.getCostToReachNode()) {
                         neighbour.setParentNode(currentNode);
                         neighbour.setCostToReachNode(tentativeG);
