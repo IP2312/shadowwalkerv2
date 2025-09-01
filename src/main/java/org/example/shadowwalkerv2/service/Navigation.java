@@ -26,7 +26,7 @@ public class Navigation {
 
     public ArrayList<GeoCoordinate> findeRoute(GeoCoordinate start, GeoCoordinate goal) {
         //todo get time from frontend and set Targets
-        double target = 30;
+        double target = 60;
         ZonedDateTime time = ZonedDateTime.now();
         ArrayList<GeoCoordinate> routeCoordinates = new ArrayList<>();
 
@@ -129,8 +129,8 @@ public class Navigation {
                 if (shadow > target){
                     return routeCoordinates;
                 }
-                System.out.println("above target");
-                currentNode = frontier.removeNode();
+                System.out.println("below target: " + shadow + "%, continue searching…");
+                continue;
 
             }
             ArrayList<RoutWay> possibleRouts = getRoutsFromNode(currentNode, routs);
@@ -145,13 +145,13 @@ public class Navigation {
                     double tentativeG = currentNode.getCostToReachNode() + distanceToNeighbour;
 
                     //prevent choosing a worse path if neighbour not explored -> POSITIVE_INFINITY or previous explored path worse
-                    if (tentativeG < neighbour.getCostToReachNode()) {
+                   // if (tentativeG < neighbour.getCostToReachNode()) {
                         neighbour.setParentNode(currentNode);
                         neighbour.setCostToReachNode(tentativeG);
                         neighbour.setEstimatedCostToGoal(mapService.haversineDistance(neighbour.getCoordinate(), goalNode.getCoordinate())
                         );
                         frontier.addOrUpdateNode(neighbour);
-                    }
+                    //}
                 }
             }
 
