@@ -26,7 +26,7 @@ public class Navigation {
 
     public ArrayList<GeoCoordinate> findeRoute(GeoCoordinate start, GeoCoordinate goal) {
         //todo get time from frontend and set Targets
-        double target = 0.80;
+        double target = 30;
         ZonedDateTime time = ZonedDateTime.now();
         ArrayList<GeoCoordinate> routeCoordinates = new ArrayList<>();
 
@@ -125,7 +125,13 @@ public class Navigation {
                 }
                 double shadow = nodesInShade/(nodesInShade + nodesInSun) * 100;
                 System.out.println("Shadow:" + shadow + "%");
-                return routeCoordinates;
+
+                if (shadow > target){
+                    return routeCoordinates;
+                }
+                System.out.println("above target");
+                currentNode = frontier.removeNode();
+
             }
             ArrayList<RoutWay> possibleRouts = getRoutsFromNode(currentNode, routs);
             LinkedHashSet<Long> neighbourIds = findNeighboursId(currentNode, possibleRouts);
