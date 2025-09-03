@@ -26,9 +26,9 @@ public class Navigation {
 
     public ArrayList<GeoCoordinate> findeRoute(GeoCoordinate start, GeoCoordinate goal) {
         System.out.println("Start:");
-        ZonedDateTime time = ZonedDateTime.now().minusHours(1);
+        ZonedDateTime time = ZonedDateTime.now().minusHours(12);
 
-        final double targetPct = 70;   // percent
+        final double targetPct = 35;   // percent
         final double maxStretch = 2;   // allow up to 80% longer than shortest
         final double minShadeGain = 0.1; // require +10% better shade to accept worse g
         final double EPS = 1e-9;
@@ -46,6 +46,7 @@ public class Navigation {
                 routeNodes.add(new RouteNode(element.id, new GeoCoordinate(element.lat, element.lon)));
             }
         }
+        System.out.println("Routs loaded");
 
         OverpassResponse buildingElements = overpassService.loadBuildings(start, goal);
         LinkedHashSet<BuildingNode> buildingNodes = new LinkedHashSet<>();
@@ -62,8 +63,12 @@ public class Navigation {
                 buildingNodes.add(new BuildingNode(element.id, new GeoCoordinate(element.lat, element.lon)));
             }
         }
+        System.out.println("buildings loaded");
 
-        if (routeNodes.isEmpty()) return routeCoordinates;
+        if (routeNodes.isEmpty()) {
+            System.out.println("No RoutNodes");
+            return routeCoordinates;
+        }
 
         HashMap<Long, RouteNode> nodesMap = new HashMap<>(routeNodes.size() * 2);
         for (RouteNode n : routeNodes) {
@@ -78,7 +83,10 @@ public class Navigation {
 
         RouteNode startNode = getClosestNode(start, routeNodes);
         RouteNode goalNode  = getClosestNode(goal, routeNodes);
-        if (startNode == null || goalNode == null) return routeCoordinates;
+        if (startNode == null || goalNode == null) {
+            System.out.println("No start or goal Node");
+            return routeCoordinates;
+        }
 
         // Shade cache for this run
         Map<Long, Boolean> shadedCache = new HashMap<>(routeNodes.size() * 2);
@@ -95,6 +103,7 @@ public class Navigation {
         startNode.setTotalCount(1);
         startNode.setShadedCount(isShaded.apply(startNode) ? 1 : 0);
         frontier.addOrUpdateNode(startNode);
+        //System.out.println("StartNode added to frontier");
 
         double shortestDist = Double.NaN;
         Double shortestShadePct = null;
@@ -102,11 +111,17 @@ public class Navigation {
 
         while (!frontier.isEmpty()) {
             RouteNode currentNode = frontier.removeNode();
-            if (currentNode == null) break;
+            if (currentNode == null){
+                System.out.println("currentNode null");
+                break;
+            }
 
             // current explored rout to long skip node
             if (!Double.isNaN(shortestDist) && maxStretch < Double.POSITIVE_INFINITY) {
-                if (currentNode.getCostToReachNode() > shortestDist * maxStretch) continue;
+                if (currentNode.getCostToReachNode() > shortestDist * maxStretch) {
+                    System.out.println("Route to long");
+                    continue;
+                }
             }
 
             // Goal handling
@@ -132,6 +147,7 @@ public class Navigation {
                     return routeCoordinates;
                 }
                 // below target -> keep searching
+                System.out.println("below target keep searching");
                 continue;
             }
 
@@ -141,10 +157,16 @@ public class Navigation {
 
             for (Long neighbourId : neighbourIds) {
                 RouteNode neighbour = nodesMap.get(neighbourId);
-                if (neighbour == null) continue;
+                if (neighbour == null) {
+                    System.out.println("neighbour null");
+                    continue;
+                }
 
                 // prevent immediate backtrack (FIX: && instead of ||)
-                if (currentNode.getParentNode() != null && currentNode.getParentNode().equals(neighbour)) continue;
+                if (currentNode.getParentNode() != null && currentNode.getParentNode().equals(neighbour)) {
+                    //System.out.println("Parent == neighbour");
+                    continue;
+                }
 
                 double edge = mapService.haversineDistance(currentNode.getCoordinate(), neighbour.getCoordinate());
                 double tentativeG = currentNode.getCostToReachNode() + edge;
@@ -169,6 +191,7 @@ public class Navigation {
                     neighbour.setTotalCount(nextTotal);
                     neighbour.setShadedCount(nextShaded);
                     frontier.addOrUpdateNode(neighbour);
+                    //System.out.println("Node added to frontier");
                 }
             }
         }
@@ -199,12 +222,12 @@ public class Navigation {
         return currentNode;
     }
 
-
+//todo Hashmap?
     public ArrayList<RoutWay> getRoutsFromNode(RouteNode node, ArrayList<RoutWay> routs) {
         ArrayList<RoutWay> newRouts = new ArrayList<>();
         for (RoutWay rout : routs) {
             for (Long nodeId : rout.getNodesId()) {
-                if (nodeId.equals(node.getId())) { // FIX
+                if (nodeId.equals(node.getId())) {
                     newRouts.add(rout);
                     break; // small perf win
                 }
