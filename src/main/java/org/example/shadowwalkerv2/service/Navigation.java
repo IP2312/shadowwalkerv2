@@ -26,8 +26,12 @@ public class Navigation {
 
     public ArrayList<GeoCoordinate> findeRoute(GeoCoordinate start, GeoCoordinate goal) {
         //todo get time from frontend and set Targets
-        double target = 60;
         ZonedDateTime time = ZonedDateTime.now();
+
+        double target = 60;
+        double maxStretch = 1.8;
+        double minShadeGain = 0.1;
+        final double EPS = 1e-9;
         ArrayList<GeoCoordinate> routeCoordinates = new ArrayList<>();
 
         OverpassResponse routElements = overpassService.loadRouts(start, goal);
@@ -105,31 +109,49 @@ public class Navigation {
         //RouteNode bestGoal = null;
 
 
+        double shortestDist = Double.NaN;          // meters
+        Double shortestShadePct = null;            // %
+        ArrayList<RouteNode> shortestPathNodes = null;
+
         while (!frontier.isEmpty()) {
             RouteNode currentNode = frontier.removeNode();
             //Todo exception
             if (currentNode == null) break;
+
+
+            if (!Double.isNaN(shortestDist) && maxStretch < Double.POSITIVE_INFINITY){
+                if (currentNode.getCostToReachNode() > shortestDist * maxStretch){
+                    continue;
+                }
+            }
+
             if (currentNode.equals(goalNode)) {
                 ArrayList<RouteNode> path = reconstructPath(currentNode);
 
-                double nodesInSun = 0;
-                double nodesInShade = 0;
+                double shaded = 0;
                 for (RouteNode rn : path) {
-                    if (sunService.checkForShade(rn,buildings,buildingNodes, time)){
-                        nodesInShade++;
-                    }
-                    else {
-                        nodesInSun++;
-                    }
+                    if (isShaded.apply(rn)) shaded++;
                     routeCoordinates.add(rn.getCoordinate());
                 }
-                double shadow = nodesInShade/(nodesInShade + nodesInSun) * 100;
-                System.out.println("Shadow:" + shadow + "%");
+                double shadowPct = 100 * shaded/path.size();
+                System.out.println("Shadow:" + shadowPct + "%");
 
-                if (shadow > target){
+                if (Double.isNaN(shortestDist)) {
+                    shortestPathNodes = path;
+                    //
+                    shortestDist = currentNode.getCostToReachNode();
+
+                    System.out.printf("Shortest: %.0fm, shade %.1f%%%n", shortestDist, shadowPct);
+                }
+
+
+
+                if (shadowPct + EPS >= target ) {
+                    // success: shadier route found (possibly longer)
+                    for (RouteNode rn : path) routeCoordinates.add(rn.getCoordinate());
                     return routeCoordinates;
                 }
-                System.out.println("below target: " + shadow + "%, continue searching…");
+                System.out.println("below target: " + shadowPct + "%, continue searching…");
                 continue;
 
             }
@@ -139,21 +161,60 @@ public class Navigation {
             for (Long neighbourId : neighbourIds) {
                 RouteNode neighbour = nodesMap.get(neighbourId);
                 //todo null
-                if (currentNode.getParentNode() == null || !currentNode.getParentNode().equals(neighbour)) {
+                if (neighbour == null) continue;
+                if (currentNode.getParentNode() != null && currentNode.getParentNode().equals(neighbour)) continue;
+
                     //calculateCost(currentNode, neighbour, goalNode);
                     double distanceToNeighbour = mapService.haversineDistance(currentNode.getCoordinate(), neighbour.getCoordinate());
                     double tentativeG = currentNode.getCostToReachNode() + distanceToNeighbour;
 
-                    //prevent choosing a worse path if neighbour not explored -> POSITIVE_INFINITY or previous explored path worse
+
+                int nextTotal  = currentNode.getTotalCount() + 1;
+                int nextShaded = currentNode.getShadedCount() + (isShaded.apply(neighbour) ? 1 : 0);
+                double nextShadeRatio = nextTotal == 0 ? 0.0 : (double) nextShaded / nextTotal;
+
+
+                double oldG     = neighbour.getCostToReachNode();
+                double oldShade = neighbour.shadeRatio();
+
+
+                boolean betterG  = tentativeG + EPS < oldG;
+                boolean equalG   = Math.abs(tentativeG - oldG) <= EPS;
+                boolean betterShadeAtSameG = equalG && nextShadeRatio > oldShade + EPS;
+
+                // allow longer if shade improves "enough"
+                boolean worseGBetterShade = !betterG && !equalG &&
+                        nextShadeRatio >= oldShade + minShadeGain;
+
+/*
+                //prevent choosing a worse path if neighbour not explored -> POSITIVE_INFINITY or previous explored path worse
                    // if (tentativeG < neighbour.getCostToReachNode()) {
                         neighbour.setParentNode(currentNode);
                         neighbour.setCostToReachNode(tentativeG);
                         neighbour.setEstimatedCostToGoal(mapService.haversineDistance(neighbour.getCoordinate(), goalNode.getCoordinate())
                         );
                         frontier.addOrUpdateNode(neighbour);
-                    //}
+                    //} */
+
+
+                if (betterG || betterShadeAtSameG || worseGBetterShade || oldG == Double.POSITIVE_INFINITY) {
+                    neighbour.setParentNode(currentNode);
+                    neighbour.setCostToReachNode(tentativeG);
+                    neighbour.setEstimatedCostToGoal(mapService.haversineDistance(neighbour.getCoordinate(), goalNode.getCoordinate()));
+                    neighbour.setTotalCount(nextTotal);
+                    neighbour.setShadedCount(nextShaded);
+                    frontier.addOrUpdateNode(neighbour);
                 }
+
             }
+            // No path reached target shade. Fall back to shortest (if found).
+            if (shortestPathNodes != null) {
+                for (RouteNode rn : shortestPathNodes) routeCoordinates.add(rn.getCoordinate());
+                System.out.printf("Returning shortest (no shaded path ≥ %.0f%%). Shade: %.1f%%%n", target, shortestShadePct == null ? 0.0 : shortestShadePct);
+            } else {
+                System.out.println("no Path found");
+            }
+
 
         }
         //todo exception
