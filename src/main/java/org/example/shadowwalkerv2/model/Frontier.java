@@ -11,65 +11,44 @@ import java.util.PriorityQueue;
 
 @Component
 public class Frontier {
-    //private final ArrayList<RouteNode> frontier = new ArrayList<>();
-
-
     private static final Comparator<RouteNode> AStar =
             Comparator.comparingDouble(RouteNode::getFCost)
                     .thenComparingDouble(n -> -n.shadeRatio())
                     .thenComparingDouble(n -> -n.getCostToReachNode());
 
+    private final PriorityQueue<RouteNode> pq = new PriorityQueue<>(AStar);
+    // Tracks the current "live" node for each id
+    private final java.util.Map<Long, RouteNode> inOpen = new java.util.HashMap<>();
 
-    private final PriorityQueue<RouteNode> pg = new PriorityQueue<>(AStar);
-    private final HashSet<RouteNode> inOpen = new HashSet<>();
-
-    public void clear(){
-        pg.clear();
+    public void clear() {
+        pq.clear();
         inOpen.clear();
     }
-    public boolean isEmpty(){
-        return pg.isEmpty();
+
+    public boolean isEmpty() {
+        return pq.isEmpty();
     }
 
-    public void addOrUpdateNode(RouteNode node){
-        if (node == null || node.isExplored()) return;
-
-
-        if (inOpen.contains(node)){
-            pg.remove(node);
-        }else{
-            inOpen.add(node);
-        }
-
-        pg.add(node);
+    public void addOrUpdateNode(RouteNode n) {
+        if (n == null) return;
+        // Overwrite the live entry and push; we do NOT remove the old one from pq.
+        // Old entries become "stale" and will be skipped when popped.
+        inOpen.put(n.getId(), n);
+        pq.add(n);
     }
 
-
-    public RouteNode removeNode(){
-        RouteNode nextNode = pg.poll();
-
-        if (nextNode != null){
-            pg.remove(nextNode);
-            //nextNode.setExplored(true); 
-        }
-        return nextNode;
-    }
-
-    /*public RouteNode removeNode(){
-        double cost = Double.MAX_VALUE;
-        RouteNode nextNode = null;
-        int indexToRemove = 0;
-        for (int i = 0; i < frontier.size(); i++) {
-            if (cost > frontier.get(i).getFCost()) {
-                cost = frontier.get(i).getFCost();
-                indexToRemove = i;
+    public RouteNode removeNode() {
+        while (!pq.isEmpty()) {
+            RouteNode top = pq.poll(); // remove one
+            RouteNode live = inOpen.get(top.getId());
+            if (live == top) {
+                // This is the current best instance—make it "closed"
+                inOpen.remove(top.getId());
+                return top;
             }
+            // else stale entry—skip and continue
         }
-        nextNode = frontier.get(indexToRemove);
-        nextNode.setExplored(true);
-        frontier.remove(indexToRemove);
-        return nextNode;
-
-    }*/
-
+        return null;
+    }
 }
+

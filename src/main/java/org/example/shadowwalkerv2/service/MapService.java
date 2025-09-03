@@ -10,7 +10,7 @@ import java.util.Map;
 public class MapService {
 
     public HashMap<String,Double> calculateBorders(GeoCoordinate start, GeoCoordinate goal){
-        //  Base bbox from start/end
+        //todo   add function to calculate minimum box if very small
         double minLat = Math.min(start.getLat(), goal.getLat());
         double maxLat = Math.max(start.getLat(), goal.getLat());
         double minLon = Math.min(start.getLon(), goal.getLon());

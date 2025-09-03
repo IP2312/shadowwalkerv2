@@ -26,6 +26,7 @@ public class OverpassService {
 
     public OverpassResponse loadRouts(GeoCoordinate start, GeoCoordinate goal){
         HashMap<String,Double> borders = mapService.calculateBorders(start, goal);
+        //todo sidewalks attached to streets
         String query = String.format(Locale.US, """
             [out:json][timeout:25];
             // Bounding Box: [South, West, North, East]

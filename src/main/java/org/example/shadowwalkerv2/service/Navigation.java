@@ -25,10 +25,11 @@ public class Navigation {
     }
 
     public ArrayList<GeoCoordinate> findeRoute(GeoCoordinate start, GeoCoordinate goal) {
-        ZonedDateTime time = ZonedDateTime.now();
+        System.out.println("Start:");
+        ZonedDateTime time = ZonedDateTime.now().minusHours(1);
 
-        final double targetPct = 60.0;   // percent
-        final double maxStretch = 5;   // allow up to 80% longer than shortest
+        final double targetPct = 70;   // percent
+        final double maxStretch = 2;   // allow up to 80% longer than shortest
         final double minShadeGain = 0.1; // require +10% better shade to accept worse g
         final double EPS = 1e-9;
 
@@ -103,7 +104,7 @@ public class Navigation {
             RouteNode currentNode = frontier.removeNode();
             if (currentNode == null) break;
 
-            // Stretch pruning after we know shortest distance
+            // current explored rout to long skip node
             if (!Double.isNaN(shortestDist) && maxStretch < Double.POSITIVE_INFINITY) {
                 if (currentNode.getCostToReachNode() > shortestDist * maxStretch) continue;
             }
@@ -127,6 +128,7 @@ public class Navigation {
                 if (shadePct + EPS >= targetPct) {
                     // Return ONLY when we accept; do not add coords elsewhere
                     for (RouteNode rn : path) routeCoordinates.add(rn.getCoordinate());
+                    System.out.println("success");
                     return routeCoordinates;
                 }
                 // below target -> keep searching
