@@ -16,7 +16,7 @@ public class MapService {
         double minLon = Math.min(start.getLon(), goal.getLon());
         double maxLon = Math.max(start.getLon(), goal.getLon());
 
-        double marginMeters = haversineDistance(start, goal) * 0.5;
+        double marginMeters = haversineDistance(start, goal) * 0.2;
 
         //  Convert meters → degrees
         double midLat = (minLat + maxLat) / 2.0; // use mean latitude for lon scaling

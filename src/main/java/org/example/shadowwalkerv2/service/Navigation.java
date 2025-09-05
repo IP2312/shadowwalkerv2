@@ -26,16 +26,15 @@ public class Navigation {
 
     public ArrayList<GeoCoordinate> findeRoute(GeoCoordinate start, GeoCoordinate goal) {
         System.out.println("Start:");
-        ZonedDateTime time = ZonedDateTime.now().minusHours(12);
+        ZonedDateTime time = ZonedDateTime.now().minusHours(1);
 
-        final double targetPct = 35;   // percent
-        final double maxStretch = 2;   // allow up to 80% longer than shortest
-        final double minShadeGain = 0.1; // require +10% better shade to accept worse g
+        final double targetPct = 60;   // percent
+        final double maxStretch = 1.5;   //
+        final double minShadeGain = 0.1;
         final double EPS = 1e-9;
 
         ArrayList<GeoCoordinate> routeCoordinates = new ArrayList<>();
 
-        // ---- Build graph (SAFE copies) ----
         OverpassResponse routElements = overpassService.loadRouts(start, goal);
         ArrayList<RouteNode> routeNodes = new ArrayList<>();
         ArrayList<RoutWay> routs = new ArrayList<>();
@@ -126,12 +125,13 @@ public class Navigation {
 
             // Goal handling
             if (currentNode.equals(goalNode)) {
+                System.out.println("Reconstruct Path");
                 ArrayList<RouteNode> path = reconstructPath(currentNode);
 
                 int shaded = 0;
                 for (RouteNode rn : path) if (isShaded.apply(rn)) shaded++;
                 double shadePct = (path.isEmpty() ? 0.0 : 100.0 * shaded / path.size());
-                System.out.println("Candidate goal shade: " + shadePct + "%");
+                System.out.println("First goal shade: " + shadePct + "%");
 
                 if (Double.isNaN(shortestDist)) {
                     shortestPathNodes = path;
@@ -162,9 +162,15 @@ public class Navigation {
                     continue;
                 }
 
-                // prevent immediate backtrack (FIX: && instead of ||)
+                // prevent immediate backtrack
                 if (currentNode.getParentNode() != null && currentNode.getParentNode().equals(neighbour)) {
                     //System.out.println("Parent == neighbour");
+                    continue;
+                }
+
+                // prevent longer cycles
+                if (createsCycle(currentNode, neighbour)) {
+                    System.out.println("Cycle");
                     continue;
                 }
 
@@ -268,5 +274,13 @@ public class Navigation {
         Collections.reverse(path);
         return path;
     }
+
+    private boolean createsCycle(RouteNode from, RouteNode to) {
+        for (RouteNode p = from; p != null; p = p.getParentNode()) {
+            if (p == to) return true; // or compare IDs
+        }
+        return false;
+    }
+
 
 }
