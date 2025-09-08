@@ -197,7 +197,7 @@ public class Navigation {
 //        routes.add(new ArrayList<>(Arrays.asList(
 //                start, SINGERSTR, FRANZISKANERPL, AUGUSTINERSTR, goal
 //        )));
-        System.out.println("no path found");
+        System.out.println("returning routs");
         return routes;
     }
 
