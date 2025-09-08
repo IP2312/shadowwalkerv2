@@ -106,9 +106,38 @@ public class Navigation {
                     routCoordinates.add(n.getCoordinate());
                 }
                 routes.add(routCoordinates);
+                System.out.println("first rout found");
                 break;
             }
+            // Expand neighbors
+            ArrayList<RoutWay> possibleRouts = getRoutsFromNode(currentNode, routs);
+            LinkedHashSet<Long> neighbourIds = findNeighboursId(currentNode, possibleRouts);
+
+            for (Long neighbourId : neighbourIds) {
+                RouteNode neighbour = nodesMap.get(neighbourId);
+                if (neighbour == null) {
+                    System.out.println("neighbour null");
+                    continue;
+                }
+
+                if (currentNode.getParentNode() != null && currentNode.getParentNode().equals(neighbour)) {
+                    //System.out.println("Parent == neighbour");
+                    continue;
+                }
+                double edge = mapService.haversineDistance(currentNode.getCoordinate(), neighbour.getCoordinate());
+                double tentativeG = currentNode.getCostToReachNode() + edge;
+
+                if (tentativeG < neighbour.getCostToReachNode()) {
+                    neighbour.setParentNode(currentNode);
+                    neighbour.setCostToReachNode(tentativeG);
+                    neighbour.setEstimatedCostToGoal(mapService.haversineDistance(neighbour.getCoordinate(), goalNode.getCoordinate())
+                    );
+                    frontier.addOrUpdateNode(neighbour);
+                }
+            }
+
         }
+
 
 //        // --- Suggested waypoints in Vienna 1st district (lat, lon) ---
 //        GeoCoordinate GRABEN_E        = new GeoCoordinate(48.208900, 16.371700);
@@ -168,7 +197,7 @@ public class Navigation {
 //        routes.add(new ArrayList<>(Arrays.asList(
 //                start, SINGERSTR, FRANZISKANERPL, AUGUSTINERSTR, goal
 //        )));
-
+        System.out.println("no path found");
         return routes;
     }
 
@@ -192,6 +221,32 @@ public class Navigation {
         }
         Collections.reverse(path);
         return path;
+    }
+
+    public ArrayList<RoutWay> getRoutsFromNode(RouteNode node, ArrayList<RoutWay> routs) {
+        ArrayList<RoutWay> newRouts = new ArrayList<>();
+        for (RoutWay rout : routs) {
+            for (Long nodeId : rout.getNodesId()) {
+                if (nodeId.equals(node.getId())) {
+                    newRouts.add(rout);
+                    break; // small perf win
+                }
+            }
+        }
+        return newRouts;
+    }
+    public LinkedHashSet<Long> findNeighboursId(RouteNode currentNode, ArrayList<RoutWay> possibleRouts) {
+        LinkedHashSet<Long> neighboursId = new LinkedHashSet<>();
+        for (RoutWay rout : possibleRouts) {
+            List<Long> ids = rout.getNodesId();
+            for (int i = 0; i < ids.size(); i++) {
+                if (ids.get(i).equals(currentNode.getId())) { // FIX
+                    if (i > 0) neighboursId.add(ids.get(i - 1));
+                    if (i < ids.size() - 1) neighboursId.add(ids.get(i + 1));
+                }
+            }
+        }
+        return neighboursId;
     }
 
 }
