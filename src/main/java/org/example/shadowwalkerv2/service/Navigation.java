@@ -29,7 +29,7 @@ public class Navigation {
         ZonedDateTime time = ZonedDateTime.now().minusHours(1);
 
         final double targetPct = 60;   // percent
-        final double maxStretch = 1.5;   //
+        final double maxStretch = 1.5;
         final double minShadeGain = 0.1;
         final double EPS = 1e-9;
 
@@ -81,7 +81,7 @@ public class Navigation {
         }
 
         RouteNode startNode = getClosestNode(start, routeNodes);
-        RouteNode goalNode  = getClosestNode(goal, routeNodes);
+        RouteNode goalNode = getClosestNode(goal, routeNodes);
         if (startNode == null || goalNode == null) {
             System.out.println("No start or goal Node");
             return routeCoordinates;
@@ -110,7 +110,7 @@ public class Navigation {
 
         while (!frontier.isEmpty()) {
             RouteNode currentNode = frontier.removeNode();
-            if (currentNode == null){
+            if (currentNode == null) {
                 System.out.println("currentNode null");
                 break;
             }
@@ -178,17 +178,17 @@ public class Navigation {
                 double tentativeG = currentNode.getCostToReachNode() + edge;
 
                 // carry shade stats
-                int nextTotal  = currentNode.getTotalCount() + 1;
+                int nextTotal = currentNode.getTotalCount() + 1;
                 int nextShaded = currentNode.getShadedCount() + (isShaded.apply(neighbour) ? 1 : 0);
                 double nextShadeRatio = (nextTotal == 0) ? 0.0 : (double) nextShaded / nextTotal;
 
-                double oldG     = neighbour.getCostToReachNode();
+                double oldG = neighbour.getCostToReachNode();
                 double oldShade = neighbour.shadeRatio();
 
-                boolean betterG  = tentativeG + EPS < oldG;
-                boolean equalG   = Math.abs(tentativeG - oldG) <= EPS;
+                boolean betterG = tentativeG + EPS < oldG;
+                boolean equalG = Math.abs(tentativeG - oldG) <= EPS;
                 boolean betterShadeAtSameG = equalG && nextShadeRatio > oldShade + EPS;
-                boolean worseGBetterShade  = !betterG && !equalG && nextShadeRatio >= oldShade + minShadeGain;
+                boolean worseGBetterShade = !betterG && !equalG && nextShadeRatio >= oldShade + minShadeGain;
 
                 if (betterG || betterShadeAtSameG || worseGBetterShade || oldG == Double.POSITIVE_INFINITY) {
                     neighbour.setParentNode(currentNode);
@@ -228,7 +228,7 @@ public class Navigation {
         return currentNode;
     }
 
-//todo Hashmap?
+    //todo Hashmap?
     public ArrayList<RoutWay> getRoutsFromNode(RouteNode node, ArrayList<RoutWay> routs) {
         ArrayList<RoutWay> newRouts = new ArrayList<>();
         for (RoutWay rout : routs) {
@@ -282,5 +282,15 @@ public class Navigation {
         return false;
     }
 
+    private final class Edge {
+        final long to;
+        final double disMeters;
+
+        Edge(long to, double distanceMeters) {
+            this.to = to;
+            this.disMeters = distanceMeters;
+
+        }
+    }
 
 }

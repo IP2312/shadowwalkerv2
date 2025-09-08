@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const end = parseLatLon(endInput.value);
 
         if (!start || !end) {
+
             alert("Invalid coordinates");
             return;
         }
