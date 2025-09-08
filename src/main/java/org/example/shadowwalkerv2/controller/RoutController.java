@@ -21,25 +21,26 @@ public class RoutController {
     }
 
     @GetMapping("/test")
-    public String test(){
+    public String test() {
         return "test";
     }
 
     @GetMapping("/nodes")
-    public List<CoordinateDTO> getNodes(
+    public List<List<CoordinateDTO>> getNodes(
             @RequestParam double startLat,
             @RequestParam double startLon,
             @RequestParam double endLat,
             @RequestParam double endLon) {
 
         GeoCoordinate start = new GeoCoordinate(startLat, startLon);
-        GeoCoordinate end   = new GeoCoordinate(endLat, endLon);
+        GeoCoordinate end = new GeoCoordinate(endLat, endLon);
 
 
-
-       return navigation.findeRoute(start, end)
+        return navigation.findeRoutes(start, end) // List<List<GeoCoordinate>>
                 .stream()
-                .map(gc -> new CoordinateDTO(gc.getLat(), gc.getLon()))
+                .map(route -> route.stream()
+                        .map(gc -> new CoordinateDTO(gc.getLat(), gc.getLon()))
+                        .toList())
                 .toList();
     }
 

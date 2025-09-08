@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const startInput = document.getElementById("startpoint");
     const endInput = document.getElementById("endpoint");
 
-
     const map = L.map('map').setView([48.31150149550213, 14.29344891170855], 15);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -23,6 +22,27 @@ document.addEventListener('DOMContentLoaded', () => {
         return {lat, lon};
     }
 
+    // Style palettes (cycled per route)
+    const COLORS = ['#2563eb', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#0ea5e9', '#f43f5e', '#14b8a6'];
+    const DASHES = [null, '8,8', '4,6', '2,6', '10,4,2,4', '1,6', '3,3', '12,6'];
+    const WEIGHTS = [5, 4, 4, 3, 3, 3, 3, 3];
+
+    function polylineStyle(idx) {
+        return {
+            color: COLORS[idx % COLORS.length],
+            dashArray: DASHES[idx % DASHES.length],
+            weight: WEIGHTS[idx % WEIGHTS.length],
+            opacity: 0.9
+        };
+    }
+
+    function clearLayer() {
+        if (routeLayer) {
+            routeLayer.remove();
+            routeLayer = null;
+        }
+    }
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -30,65 +50,74 @@ document.addEventListener('DOMContentLoaded', () => {
         const end = parseLatLon(endInput.value);
 
         if (!start || !end) {
-
             alert("Invalid coordinates");
             return;
         }
 
         const url = `/api/nodes?startLat=${start.lat}&startLon=${start.lon}&endLat=${end.lat}&endLon=${end.lon}`;
-        //http://localhost:8080/api/nodes?startLat=48.310548924222935&startLon=14.291554861045903&endLat=48.31400826041287&endLon=14.295524522445557
-        // http://localhost:8080/api/nodes?startLat=48.310712&startLon=14.292525&endLat=48.312598&endLon=14.295000
 
-                const res = await fetch(url);
-
+        const res = await fetch(url);
         if (!res.ok) {
-            alert("Failed to fetch route.");
-            return;
-        }
-        const nodes = await res.json();
-
-        if (routeLayer) {
-            routeLayer.remove();
-            routeLayer = null;
-        }
-
-        const latlngs = nodes.map(n => [n.lat, n.lon]);
-
-// after: const latlngs = nodes.map(n => [n.lat, n.lon]);
-
-        if (latlngs.length < 2) {
-            alert("Route is too short to draw.");
+            alert("Failed to fetch route(s).");
             return;
         }
 
-// remove previous route (markers + line)
-        if (routeLayer) {
-            routeLayer.remove();
-            routeLayer = null;
-        }
+        const data = await res.json();
 
-// keep everything (line + markers) together
+        // Normalize to an array of routes
+        // - Single list: [{lat,lon}, ...] -> wrap as [list]
+        // - List of lists: [[{lat,lon}, ...], ...] -> as-is
+        const routes = (Array.isArray(data) && data.length > 0 && Array.isArray(data[0])) ? data : [data];
+
+        clearLayer();
         routeLayer = L.layerGroup().addTo(map);
 
-// the line between nodes
-        const line = L.polyline(latlngs, {
-            weight: 4,
-            opacity: 0.9
-        }).addTo(routeLayer);
+        // Collect all points for global fitBounds
+        const allLatLngs = [];
 
-// (optional) fit map to the route
-        map.fitBounds(line.getBounds());
+        routes.forEach((route, idx) => {
+            const latlngs = route.map(n => [n.lat, n.lon]);
 
-// (optional) start/end markers
-        L.marker(latlngs[0]).addTo(routeLayer).bindPopup("Start");
-        L.marker(latlngs[latlngs.length - 1]).addTo(routeLayer).bindPopup("End");
+            if (latlngs.length < 2) return;
 
-// (optional) tiny markers for each node
-        latlngs.forEach(([lat, lon]) =>
-            L.circleMarker([lat, lon], { radius: 3 })
+            allLatLngs.push(...latlngs);
+
+            // Draw the route line in a distinct style
+            L.polyline(latlngs, polylineStyle(idx))
                 .addTo(routeLayer)
-                .bindPopup(`Lat: ${lat}<br>Lon: ${lon}`)
+                .bindTooltip(`Route ${idx + 1} (${latlngs.length} points)`, { sticky: true });
 
-        );
-    })
-})
+            // Mark EVERY node as a colored dot matching the route color
+            const color = COLORS[idx % COLORS.length];
+            latlngs.forEach(([lat, lon], i) => {
+                L.circleMarker([lat, lon], {
+                    radius: 3.5,
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.9,
+                    weight: 1
+                })
+                    .addTo(routeLayer)
+                    .bindTooltip(
+                        `Route ${idx + 1} · Pt ${i + 1}<br>${lat.toFixed(6)}, ${lon.toFixed(6)}`,
+                        { sticky: true }
+                    );
+            });
+
+            // (Optional) distinct start/end markers only for the first route to reduce clutter
+            if (idx === 0) {
+                L.marker(latlngs[0]).addTo(routeLayer).bindPopup("Start");
+                L.marker(latlngs[latlngs.length - 1]).addTo(routeLayer).bindPopup("End");
+            }
+        });
+
+        if (allLatLngs.length < 2) {
+            alert("No drawable route returned.");
+            return;
+        }
+
+        // Fit to show all routes/points
+        const bounds = L.latLngBounds(allLatLngs);
+        map.fitBounds(bounds, { padding: [20, 20] });
+    });
+});
