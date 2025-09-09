@@ -193,14 +193,15 @@ public class Navigation {
 
 
 
-    // Paste these inside your Navigation class (alongside your other methods/fields)
 
-///////////////////////////////
-// Helpers for Yen + A*
-    ///////////////////////////////
+
+
     private static final class Edge {
         final long u, v;
-        Edge(long u, long v) { this.u = u; this.v = v; }
+        Edge(long u, long v) {
+            this.u = u;
+            this.v = v;
+        }
         @Override public boolean equals(Object o) {
             if (this == o) return true;
             if (!(o instanceof Edge e)) return false;
@@ -264,6 +265,7 @@ public class Navigation {
                              Map<Long, RouteNode> nodes,
                              Set<Long> blockedNodes,
                              Set<Edge> blockedEdges) {
+
         if (blockedNodes.contains(startId) || blockedNodes.contains(goalId)) return null;
 
         PriorityQueue<NodeEntry> pq = new PriorityQueue<>(Comparator.comparingDouble(e -> e.f));
@@ -288,6 +290,7 @@ public class Navigation {
                 return new PathResult(path, g.get(goalId));
             }
 
+            //get list of neighbours foe current node
             for (long v : adj.getOrDefault(cur.id, Collections.emptyList())) {
                 if (blockedNodes.contains(v)) continue;
                 if (blockedEdges.contains(new Edge(cur.id, v))) continue;
@@ -301,17 +304,17 @@ public class Navigation {
                 }
             }
         }
+        System.out.println("No path found A*");
         return null; // unreachable
     }
 
-/////////////////////////////////////
-// The method you asked for:
-    /////////////////////////////////////
-    public ArrayList<ArrayList<GeoCoordinate>> findeKRouts(GeoCoordinate start,
-                                                           GeoCoordinate goal,
-                                                           int K) {
+    public ArrayList<ArrayList<GeoCoordinate>> findeKRouts(GeoCoordinate start, GeoCoordinate goal, int K) {
         ArrayList<ArrayList<GeoCoordinate>> routes = new ArrayList<>();
-        if (K <= 0) return routes;
+
+        if (K <= 0){
+            System.out.println("K <= 0");
+            return routes;
+        }
 
         // 1) Load OSM ways/nodes for the corridor between start & goal
         OverpassResponse routElements = overpassService.loadRouts(start, goal);
@@ -324,26 +327,34 @@ public class Navigation {
                 routeNodes.add(new RouteNode(e.id, new GeoCoordinate(e.lat, e.lon)));
             }
         }
-        if (routeNodes.isEmpty()) return routes;
+        if (routeNodes.isEmpty()){
+            System.out.println("No RoutNodes");
+            return routes;
+        }
+        System.out.println("Routs loaded");
 
         // 2) Index nodes by id
         HashMap<Long, RouteNode> nodesMap = new HashMap<>(routeNodes.size() * 2);
         for (RouteNode n : routeNodes) nodesMap.put(n.getId(), n);
 
-        // 3) Snap start/goal to nearest OSM nodes
+        // 3) Snap start/goal to nearest nodes
         long sId = -1, tId = -1;
         {
             double bestS = Double.POSITIVE_INFINITY, bestT = Double.POSITIVE_INFINITY;
             for (RouteNode n : routeNodes) {
                 double ds = mapService.haversineDistance(start, n.getCoordinate());
-                if (ds < bestS) { bestS = ds; sId = n.getId(); }
+                if (ds < bestS) {
+                    bestS = ds; sId = n.getId();
+                }
                 double dt = mapService.haversineDistance(goal, n.getCoordinate());
-                if (dt < bestT) { bestT = dt; tId = n.getId(); }
+                if (dt < bestT) {
+                    bestT = dt; tId = n.getId(); }
             }
             if (sId == -1 || tId == -1) return routes;
         }
+        System.out.println("Start/Goal snapped");
 
-        // 4) Build adjacency
+        // 4) Build adjacency (finde neighbours for each node)
         Map<Long, List<Long>> adj = buildAdjacency(ways);
 
         // 5) First shortest path (A*)
@@ -356,6 +367,7 @@ public class Navigation {
         List<List<Long>> A = new ArrayList<>();     // accepted paths (node ids)
         A.add(p1.ids);
 
+        //compare candidates by cost
         PriorityQueue<Candidate> B = new PriorityQueue<>(Comparator.comparingDouble(c -> c.cost));
         Set<String> seen = new HashSet<>();
         seen.add(signature(p1.ids));                // avoid duplicates of P1
@@ -371,15 +383,20 @@ public class Navigation {
                 Set<Long> blockedNodes = new HashSet<>(root.subList(0, Math.max(0, root.size() - 1)));
 
                 // Block the next edge after this prefix for EVERY accepted path sharing the prefix
+
                 Set<Edge> blockedEdges = new HashSet<>();
                 for (List<Long> P : A) {
+                    //if P to short or the path shares equal root
                     if (P.size() > i && P.subList(0, i + 1).equals(root)) {
                         blockedEdges.add(new Edge(P.get(i), P.get(i + 1)));
                     }
                 }
 
                 PathResult spurRes = aStar(spur, tId, adj, nodesMap, blockedNodes, blockedEdges);
-                if (spurRes == null) continue;
+                if (spurRes == null){
+                    System.out.println("No path found SpurRes == null");
+                    continue;
+                }
 
                 // Combine root ⊕ spur (avoid duplicating the spur node)
                 List<Long> cand = new ArrayList<>(root);
