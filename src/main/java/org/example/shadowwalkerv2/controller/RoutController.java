@@ -36,7 +36,7 @@ public class RoutController {
         GeoCoordinate end = new GeoCoordinate(endLat, endLon);
 
 
-        return navigation.findeRoutes(start, end) // List<List<GeoCoordinate>>
+        return navigation.findeKRouts(start, end,20) // List<List<GeoCoordinate>>
                 .stream()
                 .map(route -> route.stream()
                         .map(gc -> new CoordinateDTO(gc.getLat(), gc.getLon()))
