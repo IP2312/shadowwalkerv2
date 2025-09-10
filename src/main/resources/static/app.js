@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOM loaded");
     const form = document.getElementById("start-form");
     const startInput = document.getElementById("startpoint");
     const endInput = document.getElementById("endpoint");
@@ -37,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function clearLayer() {
+        console.log("Clearing layer");
         if (routeLayer) {
             routeLayer.remove();
             routeLayer = null;
@@ -44,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     form.addEventListener('submit', async (e) => {
+        console.log("Submitting form");
         e.preventDefault();
 
         const start = parseLatLon(startInput.value);
@@ -62,7 +65,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+
         const data = await res.json();
+        console.log("data fetched");
 
         // Normalize to an array of routes
         // - Single list: [{lat,lon}, ...] -> wrap as [list]
@@ -85,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Draw the route line in a distinct style
             L.polyline(latlngs, polylineStyle(idx))
                 .addTo(routeLayer)
-                .bindTooltip(`Route ${idx + 1} (${latlngs.length} points)`, { sticky: true });
+                .bindTooltip(`Route ${idx + 1} (${latlngs.length} points)`, {sticky: true});
 
             // Mark EVERY node as a colored dot matching the route color
             const color = COLORS[idx % COLORS.length];
@@ -100,11 +105,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     .addTo(routeLayer)
                     .bindTooltip(
                         `Route ${idx + 1} · Pt ${i + 1}<br>${lat.toFixed(6)}, ${lon.toFixed(6)}`,
-                        { sticky: true }
+                        {sticky: true}
                     );
             });
 
-            // (Optional) distinct start/end markers only for the first route to reduce clutter
+            // distinct start/end markers only for the first route to reduce clutter
             if (idx === 0) {
                 L.marker(latlngs[0]).addTo(routeLayer).bindPopup("Start");
                 L.marker(latlngs[latlngs.length - 1]).addTo(routeLayer).bindPopup("End");
@@ -118,6 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Fit to show all routes/points
         const bounds = L.latLngBounds(allLatLngs);
-        map.fitBounds(bounds, { padding: [20, 20] });
+        map.fitBounds(bounds, {padding: [20, 20]});
     });
 });

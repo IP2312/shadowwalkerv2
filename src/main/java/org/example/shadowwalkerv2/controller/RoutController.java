@@ -20,10 +20,10 @@ public class RoutController {
         this.navigation = navigation;
     }
 
-    @GetMapping("/test")
-    public String test() {
-        return "test";
-    }
+//    @GetMapping("/test")
+//    public String test() {
+//        return "test";
+//    }
 
     @GetMapping("/nodes")
     public List<List<CoordinateDTO>> getNodes(
@@ -36,7 +36,7 @@ public class RoutController {
         GeoCoordinate end = new GeoCoordinate(endLat, endLon);
 
 
-        return navigation.findeKRouts(start, end,20) // List<List<GeoCoordinate>>
+        return navigation.findeKRouts(start, end,100) // List<List<GeoCoordinate>>
                 .stream()
                 .map(route -> route.stream()
                         .map(gc -> new CoordinateDTO(gc.getLat(), gc.getLon()))
