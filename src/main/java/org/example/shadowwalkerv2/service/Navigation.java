@@ -13,15 +13,14 @@ import java.util.function.Function;
 public class Navigation {
     private final OverpassService overpassService;
     private final MapService mapService;
-    private final Frontier frontier;
     private final SunService sunService;
+    private final Util util;
 
     public Navigation(SunService sunService) {
         this.sunService = sunService;
         this.overpassService = new OverpassService();
         this.mapService = new MapService();
-        this.frontier = new Frontier();
-
+        this.util = new Util();
     }
 
     private static final class Edge {
@@ -135,9 +134,9 @@ public class Navigation {
         return null; // unreachable
     }
 
-    public ArrayList<ArrayList<GeoCoordinate>> findeKRouts(GeoCoordinate start, GeoCoordinate goal, int K) {
+    public ArrayList<Path> findeKRouts(GeoCoordinate start, GeoCoordinate goal, int K) {
        int nrRouts = 0;
-        ArrayList<ArrayList<GeoCoordinate>> routes = new ArrayList<>();
+        ArrayList<Path> routes = new ArrayList<>();
 
         if (K <= 0){
             System.out.println("K <= 0");
@@ -188,7 +187,7 @@ public class Navigation {
         // 5) First shortest path (A*)
         PathResult p1 = aStar(sId, tId, adj, nodesMap, Collections.emptySet(), Collections.emptySet());
         if (p1 == null) return routes;
-        routes.add(toCoords(p1.ids, nodesMap));
+        routes.add(util.toPath(p1.ids, nodesMap, nrRouts++));
         if (K == 1) return routes;
         System.out.println("first rout found");
 
@@ -247,7 +246,8 @@ public class Navigation {
             A.add(best.path);
             nrRouts++;
 
-            routes.add(toCoords(best.path, nodesMap));
+            routes.add(util.toPath(best.path, nodesMap, nrRouts));
+            //routes.add(toCoords(best.path, nodesMap));
         }
         System.out.println("K routs found: " + routes.size());
         return routes;
