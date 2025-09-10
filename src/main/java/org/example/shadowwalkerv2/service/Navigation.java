@@ -5,9 +5,7 @@ import org.example.shadowwalkerv2.dto.OverpassElement;
 import org.example.shadowwalkerv2.model.*;
 import org.springframework.stereotype.Service;
 
-import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.function.Function;
 
 @Service
 public class Navigation {
@@ -40,10 +38,14 @@ public class Navigation {
         final long id; final double g; final double f;
         NodeEntry(long id, double g, double f) { this.id = id; this.g = g; this.f = f; }
     }
-    private static final class PathResult {
-        final List<Long> ids; final double cost;
-        PathResult(List<Long> ids, double cost) { this.ids = ids; this.cost = cost; }
-    }
+//    private static final class PathResult {
+//        final List<Long> ids;
+//        final double cost;
+//        PathResult(List<Long> ids, double cost) {
+//            this.ids = ids;
+//            this.cost = cost;
+//        }
+//    }
 
     private static final double INF = Double.POSITIVE_INFINITY;
 
@@ -111,7 +113,7 @@ public class Navigation {
                 ArrayList<Long> path = new ArrayList<>();
                 for (Long x = goalId; x != null; x = parent.get(x)) path.add(x);
                 Collections.reverse(path);
-                return new PathResult(path, g.get(goalId));
+                return new PathResult(g.get(goalId),path);
             }
 
             //get list of neighbours foe current node
@@ -184,18 +186,18 @@ public class Navigation {
         // 5) First shortest path (A*)
         PathResult p1 = aStar(sId, tId, adj, nodesMap, Collections.emptySet(), Collections.emptySet());
         if (p1 == null) return routes;
-        routes.add(util.toPath(p1.ids, nodesMap, nrRouts++));
+        routes.add(util.toPath(p1, nodesMap, nrRouts++));
         if (K == 1) return routes;
         System.out.println("first rout found");
 
         // 6) Yen's loop
         List<List<Long>> A = new ArrayList<>();     // accepted paths (node ids)
-        A.add(p1.ids);
+        A.add(p1.pathIds);
 
         // candidates by cost in pq
-        PriorityQueue<Candidate> B = new PriorityQueue<>(Comparator.comparingDouble(c -> c.cost));
+        PriorityQueue<PathResult> B = new PriorityQueue<>(Comparator.comparingDouble(c -> c.cost));
         Set<String> seen = new HashSet<>();
-        seen.add(signature(p1.ids));                // avoid duplicates of P1
+        seen.add(signature(p1.pathIds));                // avoid duplicates of P1
 
         while (A.size() < K) {
             List<Long> prev = A.get(A.size() - 1);  // last accepted path
@@ -225,13 +227,13 @@ public class Navigation {
                 // Combine root ⊕ spur (avoid duplicating the spur node)
                 List<Long> cand = new ArrayList<>(root);
                 cand.remove(cand.size() - 1);
-                cand.addAll(spurRes.ids);
+                cand.addAll(spurRes.pathIds);
 
                 String sig = signature(cand);
                 if (seen.add(sig)) {
                     double total = pathCost(root, nodesMap) + spurRes.cost;
 
-                    B.add(new Candidate(total, cand));
+                    B.add(new PathResult(total, cand));
                 }
             }
 
@@ -239,11 +241,11 @@ public class Navigation {
                 System.out.println("B empty");
                 break;                // no more alternatives
             }
-            Candidate best = B.poll();
-            A.add(best.path);
+            PathResult best = B.poll();
+            A.add(best.pathIds);
             nrRouts++;
 
-            routes.add(util.toPath(best.path, nodesMap, nrRouts));
+            routes.add(util.toPath(best, nodesMap, nrRouts));
             //routes.add(toCoords(best.path, nodesMap));
         }
         System.out.println("K routs found: " + routes.size());

@@ -1,9 +1,6 @@
 package org.example.shadowwalkerv2.service;
 
-import org.example.shadowwalkerv2.model.BuildingNode;
-import org.example.shadowwalkerv2.model.BuildingWay;
-import org.example.shadowwalkerv2.model.GeoCoordinate;
-import org.example.shadowwalkerv2.model.RouteNode;
+import org.example.shadowwalkerv2.model.*;
 import org.shredzone.commons.suncalc.SunPosition;
 import org.springframework.stereotype.Service;
 
@@ -20,19 +17,14 @@ public class SunService {
     }
 
 
-//public void calculateShadeForRouts(ArrayList<ArrayList<GeoCoordinate>> routs){
-//    // Shade cache for this run
-//    Map<Long, Boolean> shadedCache = new HashMap<>();
-//    Function<GeoCoordinate, Boolean> isShaded = rn ->
-//            shadedCache.computeIfAbsent(
-//                    rn.getId(),
-//                    id -> checkForShade(rn, buildings, buildingNodes, time)
-//            );
-//
-//       for (ArrayList<GeoCoordinate> rout : routs) {
-//
-//       }
-//}
+public void calculateShadeForRouts(ArrayList<Path> paths){
+    // Shade cache for this run
+    Map<Long, Boolean> shadedCache = new HashMap<>();
+
+       for (Path path : paths) {
+
+       }
+}
 
 
     public boolean checkForShade(RouteNode currentNode, ArrayList<BuildingWay> buildings, LinkedHashSet<BuildingNode> buildingNodes, ZonedDateTime time) {

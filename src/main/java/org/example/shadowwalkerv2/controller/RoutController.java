@@ -40,6 +40,8 @@ public class RoutController {
 
         List<Path> paths = navigation.findeKRouts(start, end, 100);
 
+
+
         // map Path -> List<CoordinateDTO>
         List<List<CoordinateDTO>> routes = paths.stream()
                 // optional: ensure sorted by cost if you want
@@ -52,6 +54,11 @@ public class RoutController {
                         .toList()
                 )
                 .toList();
+
+
+
+
+
 
         return routes;
     }
