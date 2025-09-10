@@ -2,6 +2,7 @@ package org.example.shadowwalkerv2.controller;
 
 import org.example.shadowwalkerv2.dto.CoordinateDTO;
 import org.example.shadowwalkerv2.model.GeoCoordinate;
+import org.example.shadowwalkerv2.model.Path;
 import org.example.shadowwalkerv2.service.Navigation;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,16 +38,22 @@ public class RoutController {
 
 
 
-              List<List<CoordinateDTO>> routs =  navigation.findeKRouts(start, end,100) // List<List<GeoCoordinate>>
-                .stream()
-                .map(route -> route.stream()
-                        .map(gc -> new CoordinateDTO(gc.getLat(), gc.getLon()))
-                        .toList())
+        List<Path> paths = navigation.findeKRouts(start, end, 100);
+
+        // map Path -> List<CoordinateDTO>
+        List<List<CoordinateDTO>> routes = paths.stream()
+                // optional: ensure sorted by cost if you want
+                // .sorted(Comparator.comparingDouble(Path::getLength))
+                .map(p -> p.getNodes().stream()
+                        .map(rn -> {
+                            var c = rn.getCoordinate();
+                            return new CoordinateDTO(c.getLat(), c.getLon());
+                        })
+                        .toList()
+                )
                 .toList();
 
-
-
-                return routs;
+        return routes;
     }
 
 

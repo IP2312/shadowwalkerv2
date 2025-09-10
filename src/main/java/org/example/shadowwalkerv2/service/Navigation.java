@@ -44,10 +44,7 @@ public class Navigation {
         final List<Long> ids; final double cost;
         PathResult(List<Long> ids, double cost) { this.ids = ids; this.cost = cost; }
     }
-    private static final class Candidate {
-        final double cost; final List<Long> path;
-        Candidate(double cost, List<Long> path) { this.cost = cost; this.path = path; }
-    }
+
     private static final double INF = Double.POSITIVE_INFINITY;
 
     private Map<Long, List<Long>> buildAdjacency(List<RoutWay> ways) {
