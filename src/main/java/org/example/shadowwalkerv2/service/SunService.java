@@ -1,5 +1,6 @@
 package org.example.shadowwalkerv2.service;
 
+import org.example.shadowwalkerv2.dto.OverpassElement;
 import org.example.shadowwalkerv2.model.*;
 import org.shredzone.commons.suncalc.SunPosition;
 import org.springframework.stereotype.Service;
@@ -11,32 +12,67 @@ import java.util.function.Function;
 @Service
 public class SunService {
     private final GeometryService geometryService;
+    private final OverpassService overpassService;
 
-    public SunService(GeometryService geometryService) {
+    public SunService(GeometryService geometryService, OverpassService overpassService) {
         this.geometryService = geometryService;
+        this.overpassService = overpassService;
     }
 
 
-public void calculateShadeForRouts(ArrayList<Path> paths){
-    // Shade cache for this run
+public void calculateShadeForRouts(ArrayList<Path> paths, ZonedDateTime time){
+    GeoCoordinate start = paths.get(0).getNodes().getFirst().getCoordinate();
+    GeoCoordinate goal = paths.get(0).getNodes().getLast().getCoordinate();
+        OverpassResponse buildingElements = overpassService.loadBuildings(start, goal);
+    LinkedHashSet<BuildingNode> buildingNodes = new LinkedHashSet<>();
+    ArrayList<BuildingWay> buildings = new ArrayList<>();
+    for (OverpassElement element : buildingElements.getElements()) {
+        if ("way".equals(element.type)) {
+            BuildingWay newBuilding = new BuildingWay(element.id, "building", new ArrayList<>(element.nodes)); // FIX
+            if (element.tags != null) {
+                newBuilding.setHeight(element.tags.get("height"));
+                newBuilding.setLevels(element.tags.get("building:levels"));
+            }
+            buildings.add(newBuilding);
+        } else if ("node".equals(element.type)) {
+            buildingNodes.add(new BuildingNode(element.id, new GeoCoordinate(element.lat, element.lon)));
+        }
+    }
+
+    if (buildingNodes.isEmpty()) {
+        System.out.println("No BuildingNodes");
+        return;
+    }
+    System.out.println("buildings loaded");
+
+
+        // Shade cache for this run
+    RouteNode startNode = paths.get(0).getNodes().getFirst();
+    GeoCoordinate rayEnd = calculateLineForSunray(startNode, time);
+    GeoCoordinate rayStart = startNode.getCoordinate();
+    double azimuth = getAzimuth(rayStart.getLat(),rayStart.getLon(),time);
+    double elevation = getElevation(rayStart.getLat(),rayStart.getLon(),time);
+
     Map<Long, Boolean> shadedCache = new HashMap<>();
+    Function<RouteNode, Boolean> isShaded = rn ->
+            shadedCache.computeIfAbsent(
+                    rn.getId(),
+                    id -> checkForShade(rn, buildings, buildingNodes,azimuth,elevation, time,rayStart,rayEnd)
+            );
 
        for (Path path : paths) {
+           int shadedNodeNr = 0;
         for (RouteNode node : path.getNodes()) {
-            boolean shaded = shadedCache.computeIfAbsent(
-                    node.getId(),
-                    id ->
-            )
+            if (isShaded.apply(node)) shadedNodeNr++;
         }
+           double shadePct = (path.isEmpty() ? 0.0 : 100.0 * shadedNodeNr / path.getNrNodes());
+           System.out.println("shade: " + shadePct + "%");
        }
 }
 
 
-    public boolean checkForShade(RouteNode currentNode, ArrayList<BuildingWay> buildings, LinkedHashSet<BuildingNode> buildingNodes, ZonedDateTime time) {
-        GeoCoordinate rayEnd = calculateLineForSunray(currentNode, time);
-        GeoCoordinate rayStart = currentNode.getCoordinate();
-        double azimuth = getAzimuth(rayStart.getLat(),rayStart.getLon(),time);
-        double elevation = getElevation(rayStart.getLat(),rayStart.getLon(),time);
+    public boolean checkForShade(RouteNode currentNode, ArrayList<BuildingWay> buildings, LinkedHashSet<BuildingNode> buildingNodes, double azimuth, double elevation, ZonedDateTime time, GeoCoordinate rayStart, GeoCoordinate rayEnd) {
+
         boolean shade  = false;
         for (BuildingWay buildingWay : buildings) {
             if (

@@ -4,11 +4,14 @@ import org.example.shadowwalkerv2.dto.CoordinateDTO;
 import org.example.shadowwalkerv2.model.GeoCoordinate;
 import org.example.shadowwalkerv2.model.Path;
 import org.example.shadowwalkerv2.service.Navigation;
+import org.example.shadowwalkerv2.service.SunService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -16,9 +19,11 @@ import java.util.List;
 @RequestMapping("/api")
 public class RoutController {
     private final Navigation navigation;
+    private final SunService sunService;
 
-    public RoutController(Navigation navigation) {
+    public RoutController(Navigation navigation, SunService sunService) {
         this.navigation = navigation;
+        this.sunService = sunService;
     }
 
 //    @GetMapping("/test")
@@ -38,7 +43,8 @@ public class RoutController {
 
 
 
-        List<Path> paths = navigation.findeKRouts(start, end, 100);
+        List<Path> paths = navigation.findeKRouts(start, end, 20);
+        sunService.calculateShadeForRouts((ArrayList<Path>) paths, ZonedDateTime.now());
 
 
 

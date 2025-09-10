@@ -16,4 +16,12 @@ public class Path {
         this.nodes = nodes;
         this.length = length;
     }
+
+    public int getNrNodes(){
+         return nodes.size();
+    }
+
+    public boolean isEmpty(){
+        return nodes.isEmpty();
+    }
 }
