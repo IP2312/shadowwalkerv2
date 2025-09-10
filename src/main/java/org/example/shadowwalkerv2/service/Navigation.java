@@ -196,7 +196,7 @@ public class Navigation {
         List<List<Long>> A = new ArrayList<>();     // accepted paths (node ids)
         A.add(p1.ids);
 
-        //compare candidates by cost
+        // candidates by cost in pq
         PriorityQueue<Candidate> B = new PriorityQueue<>(Comparator.comparingDouble(c -> c.cost));
         Set<String> seen = new HashSet<>();
         seen.add(signature(p1.ids));                // avoid duplicates of P1
