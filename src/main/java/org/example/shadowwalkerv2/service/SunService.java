@@ -22,7 +22,12 @@ public void calculateShadeForRouts(ArrayList<Path> paths){
     Map<Long, Boolean> shadedCache = new HashMap<>();
 
        for (Path path : paths) {
-
+        for (RouteNode node : path.getNodes()) {
+            boolean shaded = shadedCache.computeIfAbsent(
+                    node.getId(),
+                    id ->
+            )
+        }
        }
 }
 
