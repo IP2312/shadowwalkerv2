@@ -8,8 +8,8 @@ import org.shredzone.commons.suncalc.SunPosition;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.*;
+import java.util.function.Function;
 
 @Service
 public class SunService {
@@ -18,6 +18,22 @@ public class SunService {
     public SunService(GeometryService geometryService) {
         this.geometryService = geometryService;
     }
+
+
+//public void calculateShadeForRouts(ArrayList<ArrayList<GeoCoordinate>> routs){
+//    // Shade cache for this run
+//    Map<Long, Boolean> shadedCache = new HashMap<>();
+//    Function<GeoCoordinate, Boolean> isShaded = rn ->
+//            shadedCache.computeIfAbsent(
+//                    rn.getId(),
+//                    id -> checkForShade(rn, buildings, buildingNodes, time)
+//            );
+//
+//       for (ArrayList<GeoCoordinate> rout : routs) {
+//
+//       }
+//}
+
 
     public boolean checkForShade(RouteNode currentNode, ArrayList<BuildingWay> buildings, LinkedHashSet<BuildingNode> buildingNodes, ZonedDateTime time) {
         GeoCoordinate rayEnd = calculateLineForSunray(currentNode, time);

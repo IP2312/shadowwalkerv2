@@ -136,6 +136,7 @@ public class Navigation {
     }
 
     public ArrayList<ArrayList<GeoCoordinate>> findeKRouts(GeoCoordinate start, GeoCoordinate goal, int K) {
+       int nrRouts = 0;
         ArrayList<ArrayList<GeoCoordinate>> routes = new ArrayList<>();
 
         if (K <= 0){
@@ -244,6 +245,8 @@ public class Navigation {
             }
             Candidate best = B.poll();
             A.add(best.path);
+            nrRouts++;
+
             routes.add(toCoords(best.path, nodesMap));
         }
         System.out.println("K routs found: " + routes.size());
