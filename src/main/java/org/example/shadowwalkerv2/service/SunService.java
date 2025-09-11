@@ -82,7 +82,7 @@ public class SunService {
 
         for (BuildingWay buildingWay : buildings) {
             if (
-                    geometryService.intersection(rayStart, rayEnd, buildingWay, buildingNodes, time, azimuth, elevation)) {
+                    geometryService.intersection(rayStart, rayEnd, buildingWay, buildingNodes, elevation)) {
                 shade = true;
             }
 
@@ -120,7 +120,7 @@ public class SunService {
                 .at(lat, lon)
                 .on(time)
                 .execute();
-
+        System.out.println("Azimuth");
         return position.getAzimuth();
     }
 
@@ -129,7 +129,7 @@ public class SunService {
                 .at(lat, lon)
                 .on(time)
                 .execute();
-
+        System.out.println("Elevation");
         return position.getAltitude();
     }
 
@@ -138,7 +138,8 @@ public class SunService {
         int deltaS = 5;
         double minShade = paths.get(0).getShadePct();
         selectedPaths.add(paths.get(0));
-        System.out.println("ShortestPath: " + paths.get(0).getId() + " shade: " + paths.get(0).getShadePct() + "%");
+        System.out.println("ShortestPath: " + paths.get(0).getId() + " " +
+                "shade: " + paths.get(0).getShadePct() + "%");
         for (Path path : paths) {
             if (path.getShadePct() > minShade) {
                 selectedPaths.add(path);
@@ -147,6 +148,7 @@ public class SunService {
             }
 
         }
+        System.out.println("Selected Paths: " + selectedPaths.size());
         return selectedPaths;
     }
 }

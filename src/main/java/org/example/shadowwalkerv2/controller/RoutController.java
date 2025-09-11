@@ -43,7 +43,7 @@ public class RoutController {
         GeoCoordinate end   = new GeoCoordinate(endLat, endLon);
 
         // K shortest paths
-        List<Path> paths = navigation.findeKRouts(start, end, 200);
+        List<Path> paths = navigation.findeKRouts(start, end, 20);
 
         // compute/set shadePct inside each Path (your method can mutate Path.shadePct)
         List<Path> selected = sunService.calculateShadeForRouts(

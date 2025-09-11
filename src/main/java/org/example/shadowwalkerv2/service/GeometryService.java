@@ -21,7 +21,7 @@ public class GeometryService {
         this.mapService = mapService;
     }
 
-    public boolean intersection(GeoCoordinate start, GeoCoordinate end, BuildingWay building, LinkedHashSet<BuildingNode> nodes, ZonedDateTime time, double azimuth, double elevation) {
+    public boolean intersection(GeoCoordinate start, GeoCoordinate end, BuildingWay building, LinkedHashSet<BuildingNode> nodes, double elevation) {
 
         GeometryFactory gf = new GeometryFactory();
 
