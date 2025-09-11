@@ -18,31 +18,64 @@ public class OverpassService {
 
     public OverpassService() {
         this.mapService = new MapService();
-        this.restTemplate =  new RestTemplate();
+        this.restTemplate = new RestTemplate();
     }
 
 
-
-
-    public OverpassResponse loadRouts(GeoCoordinate start, GeoCoordinate goal){
-        HashMap<String,Double> borders = mapService.calculateBorders(start, goal);
+    public OverpassResponse loadRouts(GeoCoordinate start, GeoCoordinate goal) {
+        HashMap<String, Double> borders = mapService.calculateBorders(start, goal);
         //todo sidewalks attached to streets
-        String query = String.format(Locale.US, """
-            [out:json][timeout:25];
-            // Bounding Box: [South, West, North, East]
-            (
-              way(%.8f, %.8f, %.8f, %.8f)
-                ["highway"]["highway"~"footway|pedestrian|path|living_street"]
-                ["foot"!~"no|private"];
-            );
-            out body;
-            >;
-            out skel qt;
-            """, borders.get("sBorder"), borders.get("wBorder"), borders.get("nBorder"), borders.get("eBorder"));
+        // Build once, reuse %s for the bbox everywhere
+        String bbox = String.format(
+                Locale.US, "%.8f, %.8f, %.8f, %.8f",
+                borders.get("sBorder"), borders.get("wBorder"),
+                borders.get("nBorder"), borders.get("eBorder")
+        );
+
+        String query = """
+                [out:json][timeout:25];
+                // Union of walkable ways inside the bbox
+                (
+                  // A) Core pedestrian ways
+                  way(%s)
+                    ["highway"]["highway"~"footway|path|pedestrian|living_street|steps"]
+                    ["foot"!~"no|private"];
+                
+                  // B) Sidewalks & crossings mapped as footway
+                  way(%s)
+                    ["highway"="footway"]["footway"~"sidewalk|crossing"];
+                
+                  // C) Cycleways that also permit walking
+                  way(%s)
+                    ["highway"="cycleway"]["foot"~"designated|yes|permissive|official"];
+                
+                  // D) Platforms (often pedestrian surfaces)
+                  way(%s)["railway"="platform"];
+                  way(%s)["public_transport"="platform"];
+                
+                  // E) Non-motorways explicitly allowing foot
+                  way(%s)
+                    ["highway"]["highway"!~"motorway|trunk|motorway_link|trunk_link"]
+                    ["foot"~"designated|yes|permissive|official"];
+                
+                  // F) Streets with sidewalks
+                  way(%s)
+                    ["highway"]["highway"!~"motorway|trunk|motorway_link|trunk_link"]
+                    ["sidewalk"~"both|left|right|separate|yes"];
+                );
+                out body;
+                >;
+                out skel qt;
+                """;
+
+        query = String.format(Locale.US, query, bbox, bbox, bbox, bbox, bbox, bbox, bbox);
+
         return sendQuery(query);
+
     }
+
     public OverpassResponse loadBuildings(GeoCoordinate start, GeoCoordinate goal) {
-        HashMap<String,Double> borders = mapService.calculateBorders(start, goal);
+        HashMap<String, Double> borders = mapService.calculateBorders(start, goal);
         //todo add relational buildings
         String query = String.format(Locale.US, """
                 [out:json][timeout:25];
@@ -57,8 +90,6 @@ public class OverpassService {
         return sendQuery(query);
 
     }
-
-
 
 
     private OverpassResponse sendQuery(String query) {

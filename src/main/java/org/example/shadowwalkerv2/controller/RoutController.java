@@ -3,6 +3,7 @@ package org.example.shadowwalkerv2.controller;
 import org.example.shadowwalkerv2.dto.CoordinateDTO;
 import org.example.shadowwalkerv2.model.GeoCoordinate;
 import org.example.shadowwalkerv2.model.Path;
+import org.example.shadowwalkerv2.model.RouteDTO;
 import org.example.shadowwalkerv2.service.Navigation;
 import org.example.shadowwalkerv2.service.SunService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,38 +32,38 @@ public class RoutController {
 //        return "test";
 //    }
 
-    @GetMapping("/nodes")
-    public List<List<CoordinateDTO>> getNodes(
+    @GetMapping("/nodes") // consider renaming to /routes
+    public List<RouteDTO> getNodes(
             @RequestParam double startLat,
             @RequestParam double startLon,
             @RequestParam double endLat,
             @RequestParam double endLon) {
 
         GeoCoordinate start = new GeoCoordinate(startLat, startLon);
-        GeoCoordinate end = new GeoCoordinate(endLat, endLon);
+        GeoCoordinate end   = new GeoCoordinate(endLat, endLon);
 
-
-
+        // K shortest paths
         List<Path> paths = navigation.findeKRouts(start, end, 200);
-        List<Path> selectedPaths = sunService.calculateShadeForRouts((ArrayList<Path>) paths, ZonedDateTime.now(),start,end);
 
+        // compute/set shadePct inside each Path (your method can mutate Path.shadePct)
+        List<Path> selected = sunService.calculateShadeForRouts(
+                new ArrayList<>(paths), ZonedDateTime.now(), start, end);
 
-
-        // map Path -> List<CoordinateDTO>
-        List<List<CoordinateDTO>> routes = selectedPaths.stream()
-                // optional: ensure sorted by cost if you want
-                // .sorted(Comparator.comparingDouble(Path::getLength))
-                .map(p -> p.getNodes().stream()
-                        .map(rn -> {
-                            var c = rn.getCoordinate();
-                            return new CoordinateDTO(c.getLat(), c.getLon());
-                        })
-                        .toList()
-                )
+        // map to DTOs
+        return selected.stream()
+                .map(this::toRouteDTO)
                 .toList();
-
-        return routes;
     }
 
+    private RouteDTO toRouteDTO(Path p) {
+        // Path.nodes is a LinkedHashSet; iterate in insertion order and project to coords
+        var coords = p.getNodes().stream()
+                .map(rn -> new CoordinateDTO(
+                        rn.getCoordinate().getLat(),
+                        rn.getCoordinate().getLon()))
+                .toList();
+
+        return new RouteDTO(p.getId(), p.getLength(), p.getShadePct(), coords);
+    }
 
 }
