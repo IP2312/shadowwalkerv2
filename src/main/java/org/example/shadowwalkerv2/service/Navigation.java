@@ -16,6 +16,7 @@ public class Navigation {
 
     public Navigation(SunService sunService) {
         this.sunService = sunService;
+
         this.overpassService = new OverpassService();
         this.mapService = new MapService();
         this.util = new Util();

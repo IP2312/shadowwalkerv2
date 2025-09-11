@@ -43,13 +43,13 @@ public class RoutController {
 
 
 
-        List<Path> paths = navigation.findeKRouts(start, end, 2000);
-        sunService.calculateShadeForRouts((ArrayList<Path>) paths, ZonedDateTime.now(),start,end);
+        List<Path> paths = navigation.findeKRouts(start, end, 200);
+        List<Path> selectedPaths = sunService.calculateShadeForRouts((ArrayList<Path>) paths, ZonedDateTime.now(),start,end);
 
 
 
         // map Path -> List<CoordinateDTO>
-        List<List<CoordinateDTO>> routes = paths.stream()
+        List<List<CoordinateDTO>> routes = selectedPaths.stream()
                 // optional: ensure sorted by cost if you want
                 // .sorted(Comparator.comparingDouble(Path::getLength))
                 .map(p -> p.getNodes().stream()
@@ -60,11 +60,6 @@ public class RoutController {
                         .toList()
                 )
                 .toList();
-
-
-
-
-
 
         return routes;
     }

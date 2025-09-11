@@ -10,6 +10,7 @@ public class Path {
     private final long id;
     private LinkedHashSet<RouteNode> nodes;
     private final double length;
+    private double shadePct;
 
     public Path(long id, LinkedHashSet<RouteNode> nodes, double length) {
         this.id = id;
@@ -24,4 +25,5 @@ public class Path {
     public boolean isEmpty(){
         return nodes.isEmpty();
     }
+
 }

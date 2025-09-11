@@ -20,65 +20,69 @@ public class SunService {
     }
 
 
-public void calculateShadeForRouts(ArrayList<Path> paths, ZonedDateTime time, GeoCoordinate start, GeoCoordinate goal){
-
+    public List<Path> calculateShadeForRouts(ArrayList<Path> paths, ZonedDateTime time, GeoCoordinate start, GeoCoordinate goal) {
+        List<Path> selectedPaths = selectPaths(paths);
         OverpassResponse buildingElements = overpassService.loadBuildings(start, goal);
-    LinkedHashSet<BuildingNode> buildingNodes = new LinkedHashSet<>();
-    ArrayList<BuildingWay> buildings = new ArrayList<>();
-    for (OverpassElement element : buildingElements.getElements()) {
-        if ("way".equals(element.type)) {
-            BuildingWay newBuilding = new BuildingWay(element.id, "building", new ArrayList<>(element.nodes)); // FIX
-            if (element.tags != null) {
-                newBuilding.setHeight(element.tags.get("height"));
-                newBuilding.setLevels(element.tags.get("building:levels"));
+        LinkedHashSet<BuildingNode> buildingNodes = new LinkedHashSet<>();
+        ArrayList<BuildingWay> buildings = new ArrayList<>();
+        for (OverpassElement element : buildingElements.getElements()) {
+            if ("way".equals(element.type)) {
+                BuildingWay newBuilding = new BuildingWay(element.id, "building", new ArrayList<>(element.nodes)); // FIX
+                if (element.tags != null) {
+                    newBuilding.setHeight(element.tags.get("height"));
+                    newBuilding.setLevels(element.tags.get("building:levels"));
+                }
+                buildings.add(newBuilding);
+            } else if ("node".equals(element.type)) {
+                buildingNodes.add(new BuildingNode(element.id, new GeoCoordinate(element.lat, element.lon)));
             }
-            buildings.add(newBuilding);
-        } else if ("node".equals(element.type)) {
-            buildingNodes.add(new BuildingNode(element.id, new GeoCoordinate(element.lat, element.lon)));
         }
-    }
 
-    if (buildingNodes.isEmpty()) {
-        System.out.println("No BuildingNodes");
-        return;
-    }
-    System.out.println("buildings loaded");
+        if (buildingNodes.isEmpty()) {
+            System.out.println("No BuildingNodes");
+            return selectedPaths;
+        }
+        System.out.println("buildings loaded");
 
 
         // Shade cache for this run
-    RouteNode startNode =  paths.get(0).getNodes().iterator().next();
+        RouteNode startNode = paths.get(0).getNodes().iterator().next();
 //    GeoCoordinate rayEnd = calculateLineForSunray(startNode, time);
 //    GeoCoordinate rayStart = startNode.getCoordinate();
-    double azimuth = getAzimuth(startNode.getCoordinate().getLat(),startNode.getCoordinate().getLon(),time);
-    double elevation = getElevation(startNode.getCoordinate().getLat(),startNode.getCoordinate().getLon(),time);
+        double azimuth = getAzimuth(startNode.getCoordinate().getLat(), startNode.getCoordinate().getLon(), time);
+        double elevation = getElevation(startNode.getCoordinate().getLat(), startNode.getCoordinate().getLon(), time);
 
-    Map<Long, Boolean> shadedCache = new HashMap<>();
-    Function<RouteNode, Boolean> isShaded = rn ->
-            shadedCache.computeIfAbsent(
-                    rn.getId(),
-                    id -> checkForShade(rn, buildings, buildingNodes,azimuth,elevation, time)
-            );
+        Map<Long, Boolean> shadedCache = new HashMap<>();
+        Function<RouteNode, Boolean> isShaded = rn ->
+                shadedCache.computeIfAbsent(
+                        rn.getId(),
+                        id -> checkForShade(rn, buildings, buildingNodes, azimuth, elevation, time)
+                );
 
-       for (Path path : paths) {
-           int shadedNodeNr = 0;
-        for (RouteNode node : path.getNodes()) {
-            if (isShaded.apply(node)) shadedNodeNr++;
+        for (Path path : paths) {
+            int shadedNodeNr = 0;
+            for (RouteNode node : path.getNodes()) {
+                if (isShaded.apply(node)) shadedNodeNr++;
+            }
+            double shadePct = (path.isEmpty() ? 0.0 : 100.0 * shadedNodeNr / path.getNrNodes());
+            path.setShadePct(shadePct);
+
         }
-           double shadePct = (path.isEmpty() ? 0.0 : 100.0 * shadedNodeNr / path.getNrNodes());
-           System.out.println("shade: " + shadePct + "%");
-       }
-}
+
+        selectedPaths = selectPaths(paths);
+        return selectedPaths;
+    }
 
 
     public boolean checkForShade(RouteNode currentNode, ArrayList<BuildingWay> buildings, LinkedHashSet<BuildingNode> buildingNodes, double azimuth, double elevation, ZonedDateTime time) {
 
-        boolean shade  = false;
-       GeoCoordinate rayStart = currentNode.getCoordinate();
-       GeoCoordinate rayEnd = calculateLineForSunray(currentNode, time, azimuth);
+        boolean shade = false;
+        GeoCoordinate rayStart = currentNode.getCoordinate();
+        GeoCoordinate rayEnd = calculateLineForSunray(currentNode, time, azimuth);
 
         for (BuildingWay buildingWay : buildings) {
             if (
-            geometryService.intersection(rayStart, rayEnd, buildingWay, buildingNodes,time, azimuth, elevation)){
+                    geometryService.intersection(rayStart, rayEnd, buildingWay, buildingNodes, time, azimuth, elevation)) {
                 shade = true;
             }
 
@@ -86,7 +90,7 @@ public void calculateShadeForRouts(ArrayList<Path> paths, ZonedDateTime time, Ge
         return shade;
     }
 
-    public GeoCoordinate calculateLineForSunray(RouteNode node, ZonedDateTime time, double azimuth){
+    public GeoCoordinate calculateLineForSunray(RouteNode node, ZonedDateTime time, double azimuth) {
         double lat = node.getCoordinate().getLat();
         double lon = node.getCoordinate().getLon();
         //System.out.println("Azimuth: " + azimuth);
@@ -111,7 +115,7 @@ public void calculateShadeForRouts(ArrayList<Path> paths, ZonedDateTime time, Ge
         return new GeoCoordinate(Math.toDegrees(lat2), Math.toDegrees(lon2));
     }
 
-    public double getAzimuth(double lat, double lon, ZonedDateTime time){
+    public double getAzimuth(double lat, double lon, ZonedDateTime time) {
         SunPosition position = SunPosition.compute()
                 .at(lat, lon)
                 .on(time)
@@ -120,12 +124,29 @@ public void calculateShadeForRouts(ArrayList<Path> paths, ZonedDateTime time, Ge
         return position.getAzimuth();
     }
 
-    public double getElevation(double lat, double lon, ZonedDateTime time){
+    public double getElevation(double lat, double lon, ZonedDateTime time) {
         SunPosition position = SunPosition.compute()
                 .at(lat, lon)
                 .on(time)
                 .execute();
 
         return position.getAltitude();
+    }
+
+    public ArrayList<Path> selectPaths(ArrayList<Path> paths) {
+        ArrayList<Path> selectedPaths = new ArrayList<>();
+        int deltaS = 5;
+        double minShade = paths.get(0).getShadePct();
+        selectedPaths.add(paths.get(0));
+        System.out.println("ShortestPath: " + paths.get(0).getId() + " shade: " + paths.get(0).getShadePct() + "%");
+        for (Path path : paths) {
+            if (path.getShadePct() > minShade) {
+                selectedPaths.add(path);
+                minShade = minShade + deltaS;
+                System.out.println("Path: " + path.getId() + " shade: " + path.getShadePct() + "%");
+            }
+
+        }
+        return selectedPaths;
     }
 }
