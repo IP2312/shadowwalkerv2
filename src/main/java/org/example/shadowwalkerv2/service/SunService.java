@@ -76,18 +76,17 @@ public class SunService {
 
     public boolean checkForShade(RouteNode currentNode, ArrayList<BuildingWay> buildings, LinkedHashSet<BuildingNode> buildingNodes, double azimuth, double elevation, ZonedDateTime time) {
 
-        boolean shade = false;
+
         GeoCoordinate rayStart = currentNode.getCoordinate();
         GeoCoordinate rayEnd = calculateLineForSunray(currentNode, time, azimuth);
-
+//todo return if true
         for (BuildingWay buildingWay : buildings) {
-            if (
-                    geometryService.intersection(rayStart, rayEnd, buildingWay, buildingNodes, elevation)) {
-                shade = true;
+            if (geometryService.intersection(rayStart, rayEnd, buildingWay, buildingNodes, elevation)) {
+                return true;
             }
 
         }
-        return shade;
+        return false;
     }
 
     public GeoCoordinate calculateLineForSunray(RouteNode node, ZonedDateTime time, double azimuth) {
