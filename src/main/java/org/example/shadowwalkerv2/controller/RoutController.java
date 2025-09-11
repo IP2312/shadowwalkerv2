@@ -43,8 +43,8 @@ public class RoutController {
 
 
 
-        List<Path> paths = navigation.findeKRouts(start, end, 20);
-        sunService.calculateShadeForRouts((ArrayList<Path>) paths, ZonedDateTime.now());
+        List<Path> paths = navigation.findeKRouts(start, end, 2000);
+        sunService.calculateShadeForRouts((ArrayList<Path>) paths, ZonedDateTime.now(),start,end);
 
 
 
