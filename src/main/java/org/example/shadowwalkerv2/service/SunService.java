@@ -25,6 +25,7 @@ public class SunService {
 
 
     public List<Path> calculateShadeForRouts(ArrayList<Path> paths, ZonedDateTime time, GeoCoordinate start, GeoCoordinate goal) {
+        System.out.println(time);
         List<Path> selectedPaths = selectPaths(paths);
         OverpassResponse buildingElements = overpassService.loadBuildings(start, goal);
         LinkedHashSet<BuildingNode> buildingNodes = new LinkedHashSet<>();
@@ -56,17 +57,21 @@ public class SunService {
         double azimuth = getAzimuth(startNode.getCoordinate().getLat(), startNode.getCoordinate().getLon(), time);
         double elevation = getElevation(startNode.getCoordinate().getLat(), startNode.getCoordinate().getLon(), time);
 
+        HashSet<BuildingObject> buildingObjects = new HashSet<>();
+        for (BuildingWay building : buildings){
+            Polygon polygon = geometryService.buildPolygon(building, buildingNodes);
+            double height = geometryService.getBuildingHeight(building);
+            BuildingObject buildingObject = new BuildingObject(building.getId(),polygon,height);
+            buildingObjects.add(buildingObject);
+        }
+        System.out.println(buildingObjects.size());
         Map<Long, Boolean> shadedCache = new HashMap<>();
         Function<RouteNode, Boolean> isShaded = rn ->
                 shadedCache.computeIfAbsent(
                         rn.getId(),
-                        id -> checkForShade(rn, buildings, buildingNodes, azimuth, elevation, time)
+                        id -> checkForShade(rn, buildingObjects, azimuth, elevation, time)
                 );
-        HashSet<Polygon> polygons = new HashSet<>();
-        for (BuildingWay building : buildings){
-            polygons.add(geometryService.buildPolygon(building,buildingNodes));
-        }
-        System.out.println(polygons.size());
+
 
         for (Path path : paths) {
             int shadedNodeNr = 0;
@@ -83,17 +88,16 @@ public class SunService {
     }
 
 
-    public boolean checkForShade(RouteNode currentNode, polygons, double azimuth, double elevation, ZonedDateTime time) {
+    public boolean checkForShade(RouteNode currentNode, HashSet<BuildingObject> buildings, double azimuth, double elevation, ZonedDateTime time) {
 
 
         GeoCoordinate rayStart = currentNode.getCoordinate();
         GeoCoordinate rayEnd = calculateLineForSunray(currentNode, time, azimuth);
 //todo return if true
-        for (Polygon poly : polygos) {
-            if (geometryService.intersection(rayStart, rayEnd, poly, elevation)) {
+        for (BuildingObject building : buildings) {
+            if (geometryService.intersection(rayStart, rayEnd, building, elevation)) {
                 return true;
             }
-
         }
         return false;
     }
@@ -143,7 +147,7 @@ public class SunService {
 
     public ArrayList<Path> selectPaths(ArrayList<Path> paths) {
         ArrayList<Path> selectedPaths = new ArrayList<>();
-        int deltaS = 5;
+        int deltaS = 1;
         double minShade = paths.get(0).getShadePct();
         selectedPaths.add(paths.get(0));
         System.out.println("ShortestPath: " + paths.get(0).getId() + " " +

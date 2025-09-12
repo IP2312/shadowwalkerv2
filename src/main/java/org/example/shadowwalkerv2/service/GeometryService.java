@@ -1,6 +1,7 @@
 package org.example.shadowwalkerv2.service;
 
 import org.example.shadowwalkerv2.model.BuildingNode;
+import org.example.shadowwalkerv2.model.BuildingObject;
 import org.example.shadowwalkerv2.model.BuildingWay;
 import org.example.shadowwalkerv2.model.GeoCoordinate;
 
@@ -22,10 +23,7 @@ public class GeometryService {
         this.gf = new GeometryFactory();
     }
 
-    public boolean intersection(GeoCoordinate start, GeoCoordinate end, BuildingWay building, LinkedHashSet<BuildingNode> nodes, double elevation) {
-
-
-        Polygon polygon = buildPolygon(building,nodes);
+    public boolean intersection(GeoCoordinate start, GeoCoordinate end, BuildingObject building, double elevation) {
 
 
         // Build line (lon, lat)
@@ -35,8 +33,8 @@ public class GeometryService {
         };
         LineString line = gf.createLineString(lineCoords);
 
-        boolean intersects = polygon.intersects(line);
-        Geometry intersection = intersects ? polygon.intersection(line) : null;
+        boolean intersects = building.getPolygon().intersects(line);
+        Geometry intersection = intersects ? building.getPolygon().intersection(line) : null;
 
        /* System.out.println("Intersects? " + intersects);
         System.out.println("Intersection geometry: " + (intersection != null ? intersection : "—"));
@@ -45,19 +43,19 @@ public class GeometryService {
 
         //Todo handle no intersection
         double heightSun = 0;
-        double buildingHeight = 0;
         if (intersects){
             double distance = mapService.haversineDistance(start, new GeoCoordinate(intersection.getCoordinate().y, intersection.getCoordinate().x));
              heightSun = calculateHeightIncrease(distance, elevation);
-             buildingHeight = getBuildingHeight(building);
 
             //System.out.println("Sun: " + heightSun);
             //System.out.println("Building: " + buildingHeight);
+            return building.getHeight() > heightSun;
         }
 
 
         //System.out.println("In the Shadow!!");
-        return buildingHeight > heightSun;
+        return false;
+
     }
 
 

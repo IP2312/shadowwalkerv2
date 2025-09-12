@@ -7,9 +7,10 @@
         const form = document.getElementById("start-form");
         const startInput = document.getElementById("startpoint");
         const endInput   = document.getElementById("endpoint");
+        const timeInput = document.getElementById("time");
 
         // Leaflet map
-        const map = L.map('map').setView([48.31150149550213, 14.29344891170855], 15);
+        const map = L.map('map').setView([48.31150149550213, 14.29344891170855], 10);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
@@ -80,6 +81,14 @@
             }).filter(Boolean);
         }
 
+
+        // default to current local time (HH:mm)
+        (function setNow() {
+            const pad = n => String(n).padStart(2, '0');
+            const now = new Date();
+            timeInput.value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+        })();
+
         // ---------- form submit ----------
         form.addEventListener('submit', async (e) => {
             console.log("Submitting form");
@@ -92,8 +101,15 @@
                 return;
             }
 
-            const url = `/api/nodes?startLat=${start.lat}&startLon=${start.lon}&endLat=${end.lat}&endLon=${end.lon}`;
+            console.log(timeInput.value)
+            const t = timeInput.value.trim(); // "HH:mm" or "HH:mm:ss"
+            const timeParam = t ? `&time=${encodeURIComponent(t)}` : '';
 
+
+
+            const url = `/api/nodes?startLat=${start.lat}&startLon=${start.lon}` + `&endLat=${end.lat}&endLon=${end.lon}${timeParam}`;
+            console.log("test")
+            console.log("GET", url);
             let res;
             try {
                 res = await fetch(url);

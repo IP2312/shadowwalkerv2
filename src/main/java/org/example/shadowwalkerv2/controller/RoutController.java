@@ -6,12 +6,18 @@ import org.example.shadowwalkerv2.model.Path;
 import org.example.shadowwalkerv2.model.RouteDTO;
 import org.example.shadowwalkerv2.service.Navigation;
 import org.example.shadowwalkerv2.service.SunService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,27 +39,49 @@ public class RoutController {
 //    }
 
     @GetMapping("/nodes") // consider renaming to /routes
-    public List<RouteDTO> getNodes(
+    public List<List<CoordinateDTO>> getNodes(
             @RequestParam double startLat,
             @RequestParam double startLon,
             @RequestParam double endLat,
-            @RequestParam double endLon) {
+            @RequestParam double endLon,
+            @RequestParam(required = false, name = "time") String timeStr, // <-- raw string
+            @RequestParam(defaultValue = "100") int k
+    ) {
+        System.out.println("time param raw = " + timeStr); // should print "06:11"
+
+        LocalTime time = null;
+        if (timeStr != null && !timeStr.isBlank()) {
+            try {
+                time = LocalTime.parse(timeStr.trim(),
+                        DateTimeFormatter.ofPattern("HH:mm[:ss]"));
+            } catch (DateTimeParseException ex) {
+                System.out.println("Invalid time format: " + ex.getMessage());
+            }
+        }
+
+        ZoneId zone = ZoneId.of("Europe/Vienna");
+        ZonedDateTime zdt = (time != null)
+                ? LocalDate.now(zone).atTime(time).atZone(zone)
+                : ZonedDateTime.now(zone);
 
         GeoCoordinate start = new GeoCoordinate(startLat, startLon);
         GeoCoordinate end   = new GeoCoordinate(endLat, endLon);
 
-        // K shortest paths
-        List<Path> paths = navigation.findeKRouts(start, end, 20);
+        List<Path> paths = navigation.findeKRouts(start, end, k);
+        if (paths.isEmpty()) return List.of();
 
-        // compute/set shadePct inside each Path (your method can mutate Path.shadePct)
-        List<Path> selected = sunService.calculateShadeForRouts(
-                new ArrayList<>(paths), ZonedDateTime.now(), start, end);
+        List<Path> selected = sunService.calculateShadeForRouts(new ArrayList<>(paths), zdt, start, end);
 
-        // map to DTOs
         return selected.stream()
-                .map(this::toRouteDTO)
+                .map(p -> p.getNodes().stream()
+                        .map(rn -> {
+                            var c = rn.getCoordinate();
+                            return new CoordinateDTO(c.getLat(), c.getLon());
+                        })
+                        .toList())
                 .toList();
     }
+
 
     private RouteDTO toRouteDTO(Path p) {
         // Path.nodes is a LinkedHashSet; iterate in insertion order and project to coords
