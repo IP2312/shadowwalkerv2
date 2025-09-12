@@ -39,7 +39,7 @@ public class RoutController {
 //    }
 
     @GetMapping("/nodes") // consider renaming to /routes
-    public List<List<CoordinateDTO>> getNodes(
+    public List<RouteDTO> getNodes(
             @RequestParam double startLat,
             @RequestParam double startLon,
             @RequestParam double endLat,
@@ -73,12 +73,7 @@ public class RoutController {
         List<Path> selected = sunService.calculateShadeForRouts(new ArrayList<>(paths), zdt, start, end);
 
         return selected.stream()
-                .map(p -> p.getNodes().stream()
-                        .map(rn -> {
-                            var c = rn.getCoordinate();
-                            return new CoordinateDTO(c.getLat(), c.getLon());
-                        })
-                        .toList())
+                .map(this::toRouteDTO)
                 .toList();
     }
 
