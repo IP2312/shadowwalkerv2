@@ -147,7 +147,7 @@ public class SunService {
 
     public ArrayList<Path> selectPaths(ArrayList<Path> paths) {
         ArrayList<Path> selectedPaths = new ArrayList<>();
-        int deltaS = 1;
+        int deltaS = 5;
         double minShade = paths.get(0).getShadePct();
         selectedPaths.add(paths.get(0));
         System.out.println("ShortestPath: " + paths.get(0).getId() + " " +
