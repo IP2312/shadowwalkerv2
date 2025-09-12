@@ -2,12 +2,16 @@ package org.example.shadowwalkerv2.service;
 
 import org.example.shadowwalkerv2.dto.OverpassElement;
 import org.example.shadowwalkerv2.model.*;
+import org.locationtech.jts.geom.Polygon;
 import org.shredzone.commons.suncalc.SunPosition;
 import org.springframework.stereotype.Service;
 
+import java.awt.*;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.List;
 import java.util.function.Function;
+import org.locationtech.jts.geom.*;
 
 @Service
 public class SunService {
@@ -58,6 +62,11 @@ public class SunService {
                         rn.getId(),
                         id -> checkForShade(rn, buildings, buildingNodes, azimuth, elevation, time)
                 );
+        HashSet<Polygon> polygons = new HashSet<>();
+        for (BuildingWay building : buildings){
+            polygons.add(geometryService.buildPolygon(building,buildingNodes));
+        }
+        System.out.println(polygons.size());
 
         for (Path path : paths) {
             int shadedNodeNr = 0;
@@ -74,14 +83,14 @@ public class SunService {
     }
 
 
-    public boolean checkForShade(RouteNode currentNode, ArrayList<BuildingWay> buildings, LinkedHashSet<BuildingNode> buildingNodes, double azimuth, double elevation, ZonedDateTime time) {
+    public boolean checkForShade(RouteNode currentNode, polygons, double azimuth, double elevation, ZonedDateTime time) {
 
 
         GeoCoordinate rayStart = currentNode.getCoordinate();
         GeoCoordinate rayEnd = calculateLineForSunray(currentNode, time, azimuth);
 //todo return if true
-        for (BuildingWay buildingWay : buildings) {
-            if (geometryService.intersection(rayStart, rayEnd, buildingWay, buildingNodes, elevation)) {
+        for (Polygon poly : polygos) {
+            if (geometryService.intersection(rayStart, rayEnd, poly, elevation)) {
                 return true;
             }
 

@@ -4,7 +4,6 @@ import org.example.shadowwalkerv2.model.BuildingNode;
 import org.example.shadowwalkerv2.model.BuildingWay;
 import org.example.shadowwalkerv2.model.GeoCoordinate;
 
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -16,56 +15,18 @@ import org.springframework.stereotype.Service;
 public class GeometryService {
 
     private final MapService mapService;
+    private final GeometryFactory gf;
 
     public GeometryService(MapService mapService) {
         this.mapService = mapService;
+        this.gf = new GeometryFactory();
     }
 
     public boolean intersection(GeoCoordinate start, GeoCoordinate end, BuildingWay building, LinkedHashSet<BuildingNode> nodes, double elevation) {
 
-        GeometryFactory gf = new GeometryFactory();
 
-        // Index building nodes by id for fast lookup
-        HashMap<Long, BuildingNode> nodeIndex = new HashMap<>(nodes.size());
-        for (BuildingNode n : nodes) {
-            long id = n.getId();
-            nodeIndex.put(id, n);
-        }
+        Polygon polygon = buildPolygon(building,nodes);
 
-        List<Long> ids = building.getNodesId();
-        if (ids == null || ids.size() < 3) {
-            System.out.println("Not enough vertices to form a polygon");
-            return false;
-        }
-
-        // Ensure ring is closed (first id == last id)
-        boolean closed = ids.size() >= 4 && ids.get(0).equals(ids.get(ids.size() - 1));
-        List<Long> ringIds = closed ? ids : new ArrayList<>(ids);
-        if (!closed) {
-            ringIds.add(ids.get(0));
-        }
-
-        // Build polygon coordinates (JTS expects x=lon, y=lat)
-        Coordinate[] poly = new Coordinate[ringIds.size()];
-        for (int i = 0; i < ringIds.size(); i++) {
-            Long nid = ringIds.get(i);
-            BuildingNode bn = nodeIndex.get(nid);
-            if (bn == null || bn.getCoordinate() == null) {
-                System.out.println("Missing node for id: " + nid);
-                return false;
-            }
-            double lat = bn.getCoordinate().getLat();
-            double lon = bn.getCoordinate().getLon();
-            poly[i] = new Coordinate(lon, lat);
-        }
-
-        Polygon polygon;
-        try {
-            polygon = gf.createPolygon(poly);
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid polygon geometry: " + e.getMessage());
-            return false;
-        }
 
         // Build line (lon, lat)
         Coordinate[] lineCoords = new Coordinate[] {
@@ -112,6 +73,54 @@ public class GeometryService {
         // Convert degrees to radians for Math.tan
         double angleRadians = Math.toRadians(angleDegrees);
         return distanceMeters * Math.tan(angleRadians);
+    }
+
+
+    public Polygon buildPolygon(BuildingWay building, LinkedHashSet<BuildingNode> nodes){
+
+
+        // Index building nodes by id for fast lookup
+        HashMap<Long, BuildingNode> nodeIndex = new HashMap<>(nodes.size());
+        for (BuildingNode n : nodes) {
+            long id = n.getId();
+            nodeIndex.put(id, n);
+        }
+
+        List<Long> ids = building.getNodesId();
+        if (ids == null || ids.size() < 3) {
+            System.out.println("Not enough vertices to form a polygon");
+            return null;
+        }
+
+        // Ensure ring is closed (first id == last id)
+        boolean closed = ids.size() >= 4 && ids.get(0).equals(ids.get(ids.size() - 1));
+        List<Long> ringIds = closed ? ids : new ArrayList<>(ids);
+        if (!closed) {
+            ringIds.add(ids.get(0));
+        }
+
+        // Build polygon coordinates (JTS expects x=lon, y=lat)
+        Coordinate[] poly = new Coordinate[ringIds.size()];
+        for (int i = 0; i < ringIds.size(); i++) {
+            Long nid = ringIds.get(i);
+            BuildingNode bn = nodeIndex.get(nid);
+            if (bn == null || bn.getCoordinate() == null) {
+                System.out.println("Missing node for id: " + nid);
+                return null;
+            }
+            double lat = bn.getCoordinate().getLat();
+            double lon = bn.getCoordinate().getLon();
+            poly[i] = new Coordinate(lon, lat);
+        }
+
+        Polygon polygon;
+        try {
+            polygon = gf.createPolygon(poly);
+        } catch (IllegalArgumentException e) {
+            System.out.println("Invalid polygon geometry: " + e.getMessage());
+            return null;
+        }
+        return polygon;
     }
 
 }
