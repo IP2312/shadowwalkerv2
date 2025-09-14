@@ -1,21 +1,33 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8" />
     <title>Index</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"/>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+
+    <!-- Leaflet CSS first -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous"/>
+
+    <!-- Your styles after Leaflet so overrides win -->
+    <link rel="stylesheet" href="styles.css" />
+
+    <!-- Leaflet JS before app.js -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
+
+    <!-- Your app -->
     <script src="app.js" defer></script>
 </head>
 <body>
 <h1>index</h1>
+
 <form id="start-form">
     <input type="text" id="startpoint" placeholder="Start Point">
     <input type="text" id="endpoint" placeholder="End Point">
     <input type="time" id="time" step="60" placeholder="Time">
     <button type="submit">Start</button>
 </form>
+
 <div id="map"></div>
 </body>
 </html>
