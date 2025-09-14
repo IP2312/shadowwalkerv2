@@ -1,4 +1,26 @@
-#map {
-    height: 100vh;
-    width: 100%;
+/* Map must have a real height */
+#map { height: 100vh; width: 100%; }
+
+/* (Optional) simple form styling */
+body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+form { display: flex; gap: 8px; padding: 12px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid #e5e7eb; }
+input, button { padding: 8px 10px; border-radius: 8px; border: 1px solid #d1d5db; }
+button { background: #2563eb; color: #fff; border-color: #1d4ed8; cursor: pointer; }
+button:hover { filter: brightness(1.05); }
+
+/* Crosshair while selecting — override Leaflet's hand cursor everywhere */
+.leaflet-container.pick-cursor,
+.leaflet-container.pick-cursor *,
+.leaflet-container.pick-cursor .leaflet-pane,
+.leaflet-container.pick-cursor .leaflet-interactive,
+.leaflet-container.pick-cursor.leaflet-dragging,
+.leaflet-container.pick-cursor.leaflet-grab {
+    cursor: crosshair !important;
 }
+
+/* Toggle button visual when active */
+.leaflet-control.pick-toggle.active {
+    outline: 2px solid #3b82f6;
+    background: #e5f0ff;
+}
+.leaflet-control.pick-toggle { cursor: pointer; }
