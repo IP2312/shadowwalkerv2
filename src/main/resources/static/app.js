@@ -62,6 +62,7 @@
         // Normalize server response to a unified shape:
         // [{ id, length, shadowPct, coords:[{lat,lon}...] }]
         function normalizeResponse(data) {
+            debugger;
             if (!Array.isArray(data)) return [];
             return data.map(item => {
                 // New DTO shape (RouteDTO)
@@ -89,10 +90,14 @@
             timeInput.value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
         })();
 
+
+
+
         // ---------- form submit ----------
         form.addEventListener('submit', async (e) => {
             console.log("Submitting form");
             e.preventDefault();
+            debugger;
 
             const start = parseLatLon(startInput.value);
             const end   = parseLatLon(endInput.value);
