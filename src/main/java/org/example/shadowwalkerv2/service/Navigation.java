@@ -21,71 +21,8 @@ public class Navigation {
         this.mapService = new MapService();
         this.util = new Util();
     }
-
-    private static final class Edge {
-        final long u, v;
-        Edge(long u, long v) {
-            this.u = u;
-            this.v = v;
-        }
-        @Override public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof Edge e)) return false;
-            return u == e.u && v == e.v;
-        }
-        @Override public int hashCode() { return Objects.hash(u, v); }
-    }
-    private static final class NodeEntry {
-        final long id; final double g; final double f;
-        NodeEntry(long id, double g, double f) { this.id = id; this.g = g; this.f = f; }
-    }
-//    private static final class PathResult {
-//        final List<Long> ids;
-//        final double cost;
-//        PathResult(List<Long> ids, double cost) {
-//            this.ids = ids;
-//            this.cost = cost;
-//        }
-//    }
-
     private static final double INF = Double.POSITIVE_INFINITY;
 
-    private Map<Long, List<Long>> buildAdjacency(List<RoutWay> ways) {
-        Map<Long, List<Long>> adj = new HashMap<>();
-        for (RoutWay w : ways) {
-            List<Long> ids = w.getNodesId();
-            for (int i = 0; i < ids.size(); i++) {
-                long a = ids.get(i);
-                adj.computeIfAbsent(a, k -> new ArrayList<>());
-                if (i > 0) adj.get(a).add(ids.get(i - 1));
-                if (i < ids.size() - 1) adj.get(a).add(ids.get(i + 1));
-            }
-        }
-        return adj;
-    }
-    private double w(long u, long v, Map<Long, RouteNode> nodes) {
-        GeoCoordinate cu = nodes.get(u).getCoordinate();
-        GeoCoordinate cv = nodes.get(v).getCoordinate();
-        return mapService.haversineDistance(cu, cv);
-    }
-    private double h(long u, long goal, Map<Long, RouteNode> nodes) { return w(u, goal, nodes); }
-    private double pathCost(List<Long> ids, Map<Long, RouteNode> nodes) {
-        double c = 0.0;
-        for (int i = 0; i + 1 < ids.size(); i++) c += w(ids.get(i), ids.get(i + 1), nodes);
-        return c;
-    }
-    private ArrayList<GeoCoordinate> toCoords(List<Long> ids, Map<Long, RouteNode> nodes) {
-        ArrayList<GeoCoordinate> out = new ArrayList<>(ids.size());
-        for (Long id : ids) out.add(nodes.get(id).getCoordinate());
-        return out;
-    }
-    private String signature(List<Long> ids) {
-        StringBuilder sb = new StringBuilder();
-        for (Long id : ids) sb.append(id).append('-');
-        return sb.toString();
-    }
-
-    // Local A* with temporary blocks (distance-only). Uses PQ with stale-skip.
     private PathResult aStar(long startId,
                              long goalId,
                              Map<Long, List<Long>> adj,
@@ -102,7 +39,7 @@ public class Navigation {
 
         for (Long id : nodes.keySet()) g.put(id, INF);
         g.put(startId, 0.0);
-        pq.add(new NodeEntry(startId, 0.0, h(startId, goalId, nodes)));
+        pq.add(new NodeEntry(startId, 0.0, calculateH(startId, goalId, nodes)));
 
         while (!pq.isEmpty()) {
             NodeEntry cur = pq.poll();
@@ -117,17 +54,17 @@ public class Navigation {
                 return new PathResult(g.get(goalId),path);
             }
 
-            //get list of neighbours foe current node
+            //get list of neighbours foe current node u startNode v targetNode of Edge
             for (long v : adj.getOrDefault(cur.id, Collections.emptyList())) {
                 if (blockedNodes.contains(v)) continue;
                 if (blockedEdges.contains(new Edge(cur.id, v))) continue;
                 if (closed.contains(v)) continue;
 
-                double tentative = g.get(cur.id) + w(cur.id, v, nodes);
+                double tentative = g.get(cur.id) + calculateWeight(cur.id, v, nodes);
                 if (tentative < g.getOrDefault(v, INF)) {
                     g.put(v, tentative);
                     parent.put(v, cur.id);
-                    pq.add(new NodeEntry(v, tentative, tentative + h(v, goalId, nodes)));
+                    pq.add(new NodeEntry(v, tentative, tentative + calculateH(v, goalId, nodes)));
                 }
             }
         }
@@ -225,7 +162,7 @@ public class Navigation {
                     continue;
                 }
 
-                // Combine root ⊕ spur (avoid duplicating the spur node)
+                // Combine root spur (avoid duplicating the spur node)
                 List<Long> cand = new ArrayList<>(root);
                 cand.remove(cand.size() - 1);
                 cand.addAll(spurRes.pathIds);
@@ -254,5 +191,52 @@ public class Navigation {
     }
 
 
+    private static final class NodeEntry {
+        final long id;
+        final double g;
+        final double f;
+        NodeEntry(long id, double g, double f) {
+            this.id = id;
+            this.g = g;
+            this.f = f;
+        }
+    }
+    private Map<Long, List<Long>> buildAdjacency(List<RoutWay> ways) {
+        Map<Long, List<Long>> adj = new HashMap<>();
+        for (RoutWay w : ways) {
+            List<Long> ids = w.getNodesId();
+            for (int i = 0; i < ids.size(); i++) {
+                long a = ids.get(i);
+                adj.computeIfAbsent(a, k -> new ArrayList<>());
+                if (i > 0) adj.get(a).add(ids.get(i - 1));
+                if (i < ids.size() - 1) adj.get(a).add(ids.get(i + 1));
+            }
+        }
+        return adj;
+    }
+    private double calculateWeight(long u, long v, Map<Long, RouteNode> nodes) {
+        GeoCoordinate cu = nodes.get(u).getCoordinate();
+        GeoCoordinate cv = nodes.get(v).getCoordinate();
+        return mapService.haversineDistance(cu, cv);
+    }
+    private double calculateH(long u, long goal, Map<Long, RouteNode> nodes) {
+        return calculateWeight(u, goal, nodes);
+    }
+    private double pathCost(List<Long> ids, Map<Long, RouteNode> nodes) {
+        double cost = 0.0;
+        for (int i = 0; i + 1 < ids.size(); i++) cost += calculateWeight(ids.get(i), ids.get(i + 1), nodes);
+        return cost;
+    }
+ /*   private ArrayList<GeoCoordinate> toCoords(List<Long> ids, Map<Long, RouteNode> nodes) {
+        ArrayList<GeoCoordinate> out = new ArrayList<>(ids.size());
+        for (Long id : ids) out.add(nodes.get(id).getCoordinate());
+        return out;
+    }*/
+
+    private String signature(List<Long> ids) {
+        StringBuilder sb = new StringBuilder();
+        for (Long id : ids) sb.append(id).append('-');
+        return sb.toString();
+    }
 
 }
