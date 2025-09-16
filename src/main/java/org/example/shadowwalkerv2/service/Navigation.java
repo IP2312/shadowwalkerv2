@@ -13,6 +13,8 @@ public class Navigation {
     private final MapService mapService;
     private final SunService sunService;
     private final Util util;
+    private static final double EDGE_PENALTY_METERS = 25.0; // tune 10–50
+
 
     public Navigation(SunService sunService) {
         this.sunService = sunService;
@@ -28,7 +30,9 @@ public class Navigation {
                              Map<Long, List<Long>> adj,
                              Map<Long, RouteNode> nodes,
                              Set<Long> blockedNodes,
-                             Set<Edge> blockedEdges) {
+                             Set<Edge> blockedEdges,
+                             Set<Edge> exploredEdges) {
+
 
         if (blockedNodes.contains(startId) || blockedNodes.contains(goalId)) return null;
 
@@ -60,7 +64,12 @@ public class Navigation {
                 if (blockedEdges.contains(new Edge(cur.id, v))) continue;
                 if (closed.contains(v)) continue;
 
-                double tentative = g.get(cur.id) + calculateWeight(cur.id, v, nodes);
+                double base = calculateWeight(cur.id, v, nodes);
+                double pen  = (exploredEdges != null && exploredEdges.contains(new Edge(cur.id, v)))
+                        ? EDGE_PENALTY_METERS : 0.0;
+
+                double tentative = g.get(cur.id) + base + pen;
+
                 if (tentative < g.getOrDefault(v, INF)) {
                     g.put(v, tentative);
                     parent.put(v, cur.id);
@@ -122,7 +131,7 @@ public class Navigation {
         Map<Long, List<Long>> adj = buildAdjacency(ways);
 
         // 5) First shortest path (A*)
-        PathResult p1 = aStar(sId, tId, adj, nodesMap, Collections.emptySet(), Collections.emptySet());
+        PathResult p1 = aStar(sId, tId, adj, nodesMap, Collections.emptySet(), Collections.emptySet(),Collections.emptySet());
         if (p1 == null) return routes;
         routes.add(util.toPath(p1, nodesMap, nrRouts++));
         if (K == 1) return routes;
@@ -137,8 +146,11 @@ public class Navigation {
         Set<String> seen = new HashSet<>();
         seen.add(signature(p1.pathIds));                // avoid duplicates of P1
 
+
         while (A.size() < K) {
-            List<Long> prev = A.get(A.size() - 1);  // last accepted path
+            List<Long> prev = A.get(A.size() - 1);// last accepted path
+            Set<Edge> penaltyEdges = new HashSet<>();
+            for (List<Long> p : A) addEdgesOfPathTo(penaltyEdges, p);
 
             for (int i = 0; i < prev.size() - 1; i++) {
                 long spur = prev.get(i);
@@ -157,7 +169,7 @@ public class Navigation {
                     }
                 }
 
-                PathResult spurRes = aStar(spur, tId, adj, nodesMap, blockedNodes, blockedEdges);
+                PathResult spurRes = aStar(spur, tId, adj, nodesMap, blockedNodes, blockedEdges, penaltyEdges);
                 if (spurRes == null){
                     continue;
                 }
@@ -167,9 +179,11 @@ public class Navigation {
                 cand.remove(cand.size() - 1);
                 cand.addAll(spurRes.pathIds);
 
+
                 String sig = signature(cand);
                 if (seen.add(sig)) {
-                    double total = pathCost(root, nodesMap) + spurRes.cost;
+
+                    double total = pathCostWithPenalty(cand, nodesMap, penaltyEdges);
 
                     B.add(new PathResult(total, cand));
                 }
@@ -238,5 +252,29 @@ public class Navigation {
         for (Long id : ids) sb.append(id).append('-');
         return sb.toString();
     }
+
+    //Penalties
+    private static void addEdgesOfPathTo(Set<Edge> out, List<Long> ids) {
+        for (int i = 0; i + 1 < ids.size(); i++) {
+            long u = ids.get(i), v = ids.get(i + 1);
+            out.add(new Edge(u, v));
+            out.add(new Edge(v, u)); // undirected: penalize both directions
+        }
+    }
+    private double pathCostWithPenalty(List<Long> ids,
+                                       Map<Long, RouteNode> nodes,
+                                       Set<Edge> penaltyEdges) {
+        double cost = 0.0;
+        for (int i = 0; i + 1 < ids.size(); i++) {
+            long u = ids.get(i), v = ids.get(i + 1);
+            double base = calculateWeight(u, v, nodes);
+            double pen  = penaltyEdges.contains(new Edge(u, v)) ? EDGE_PENALTY_METERS : 0.0;
+            cost += base + pen;
+        }
+        return cost;
+    }
+
+
+
 
 }
