@@ -1,14 +1,36 @@
-/* Map must have a real height */
+/* --- Layout: make the map reliably full-height without weird values --- */
+html, body { height: 100%; margin: 0; }
 #map { height: 100vh; width: 100%; }
 
-/* (Optional) simple form styling */
-body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-form { display: flex; gap: 8px; padding: 12px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid #e5e7eb; }
-input, button { padding: 8px 10px; border-radius: 8px; border: 1px solid #d1d5db; }
-button { background: #2563eb; color: #fff; border-color: #1d4ed8; cursor: pointer; }
+/* Prefer dynamic viewport height when available (mobile toolbars won't shrink it) */
+@supports (height: 100dvh) {
+    #map { height: 100dvh; }
+}
+
+/* --- Base UI styling --- */
+body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+form {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    border-bottom: 1px solid #e5e7eb;
+}
+input, button {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+}
+button {
+    background: #2563eb;
+    color: #fff;
+    border-color: #1d4ed8;
+    cursor: pointer;
+}
 button:hover { filter: brightness(1.05); }
 
-/* Crosshair while selecting — override Leaflet's hand cursor everywhere */
+/* --- Pick mode: force crosshair everywhere while selecting --- */
 .leaflet-container.pick-cursor,
 .leaflet-container.pick-cursor *,
 .leaflet-container.pick-cursor .leaflet-pane,
@@ -18,9 +40,42 @@ button:hover { filter: brightness(1.05); }
     cursor: crosshair !important;
 }
 
-/* Toggle button visual when active */
-.leaflet-control.pick-toggle.active {
+/* --- Pick toggle button styles ---
+   NOTE: your JS toggles `.active` on the CONTROL CONTAINER (the div with classes
+   `leaflet-control leaflet-bar`), not on the <a> itself.
+   So target `.leaflet-control.leaflet-bar.active` below.
+*/
+.leaflet-control.leaflet-bar.active {
     outline: 2px solid #3b82f6;
     background: #e5f0ff;
 }
-.leaflet-control.pick-toggle { cursor: pointer; }
+/* The clickable <a class="pick-toggle"> inside the control */
+.leaflet-control .pick-toggle {
+    cursor: pointer;
+    display: block;
+    text-decoration: none;
+}
+
+/* --- Optional: legend styles (if you added the legend control in JS) --- */
+.route-legend {
+    background: #fff;
+    padding: 8px 10px;
+    line-height: 1.25;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.25);
+    /* avoid fit-content warnings; shrink to content but cap width */
+    width: max-content;
+    max-width: 280px;
+}
+.route-legend .legend-body { margin-top: 6px; }
+.route-legend .legend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0;
+}
+.route-legend .legend-row svg {
+    width: 40px;
+    height: 12px;
+    display: block;
+}

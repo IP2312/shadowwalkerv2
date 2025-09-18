@@ -45,7 +45,7 @@ public class RoutController {
             @RequestParam double endLat,
             @RequestParam double endLon,
             @RequestParam(required = false, name = "time") String timeStr, // <-- raw string
-            @RequestParam(defaultValue = "20") int k
+            @RequestParam(defaultValue = "50") int k
     ) {
         System.out.println("time param raw = " + timeStr); // should print "06:11"
 

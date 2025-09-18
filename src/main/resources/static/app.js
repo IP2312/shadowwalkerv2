@@ -30,6 +30,23 @@
         const mapEl = map.getContainer();
         let routeLayer;
 
+        // ---------- Legend control ----------
+        let legendControl, legendEl;
+        legendControl = L.control({ position: 'bottomright' });
+        legendControl.onAdd = function () {
+            const div = L.DomUtil.create('div', 'route-legend leaflet-control');
+            div.style.background = 'white';
+            div.style.padding = '8px 10px';
+            div.style.lineHeight = '1.25';
+            div.style.borderRadius = '6px';
+            div.style.boxShadow = '0 1px 4px rgba(0,0,0,.25)';
+            div.style.maxWidth = '260px';
+            div.innerHTML = '<strong>Routes</strong><div class="legend-body" style="margin-top:6px;"><em>No routes</em></div>';
+            legendEl = div.querySelector('.legend-body');
+            return div;
+        };
+        legendControl.addTo(map);
+
         // ---------- helpers ----------
         function parseLatLon(text) {
             if (!text) return null;
@@ -54,16 +71,53 @@
             };
         }
 
+        // Legend helpers
+        function dashToSvg(dash) {
+            if (!dash) return null;
+            return dash.split(',').map(x => Number(x.trim())).filter(Number.isFinite).join(',');
+        }
+        function svgSwatch({ color = '#000', dashArray = null, weight = 4 }) {
+            const w = 40, h = 12, y = Math.round(h / 2);
+            const dash = dashToSvg(dashArray);
+            return `
+                <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"
+                     style="width:${w}px; height:${h}px; display:block">
+                  <line x1="2" y1="${y}" x2="${w-2}" y2="${y}"
+                        stroke="${color}" stroke-width="${weight}"
+                        ${dash ? `stroke-dasharray="${dash}"` : ''} stroke-linecap="round" />
+                </svg>`;
+        }
+        const fmtKm  = m => (m == null ? "—" : (m/1000).toFixed(2));
+        const fmtPct = p => (p == null ? "—" : Number(p).toFixed(1));
+        const fmt6   = n => Number(n).toFixed(6);
+
+        function updateLegendForRoutes(routes) {
+            if (!legendEl) return;
+            const rows = routes.map((route, idx) => {
+                const style = polylineStyle(idx);
+                const title = `Route ${idx + 1} · ${fmtKm(route.length)} km · shade ${fmtPct(route.shadowPct)}%`;
+                const swatch = svgSwatch(style);
+                return `
+                  <div class="legend-row" style="display:flex; align-items:center; gap:8px; margin:4px 0;">
+                    ${swatch}
+                    <div style="min-width:0;">
+                      <div style="font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${title}</div>
+                    </div>
+                  </div>`;
+            });
+            legendEl.innerHTML = rows.join('') || '<em>No routes</em>';
+        }
+        function clearLegend() {
+            if (legendEl) legendEl.innerHTML = '<em>No routes</em>';
+        }
+
         function clearLayer() {
             if (routeLayer) {
                 routeLayer.remove();
                 routeLayer = null;
             }
+            clearLegend(); // keep legend in sync
         }
-
-        const fmtKm = m => (m == null ? "—" : (m/1000).toFixed(2));
-        const fmtPct = p => (p == null ? "—" : Number(p).toFixed(1));
-        const fmt6 = n => Number(n).toFixed(6);
 
         function normalizeResponse(data) {
             if (!Array.isArray(data)) return [];
@@ -251,6 +305,7 @@
             const routes = normalizeResponse(data);
             if (!routes.length) {
                 alert("No route data.");
+                clearLayer();
                 return;
             }
 
@@ -286,6 +341,9 @@
                     L.marker(latlngs[latlngs.length - 1]).addTo(routeLayer).bindPopup("End");
                 }
             });
+
+            // Update legend to reflect drawn routes
+            updateLegendForRoutes(routes);
 
             if (allLatLngs.length >= 2) {
                 map.fitBounds(L.latLngBounds(allLatLngs), { padding: [20, 20] });

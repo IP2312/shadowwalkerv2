@@ -154,8 +154,9 @@ public class SunService {
                 "shade: " + paths.get(0).getShadePct() + "%");
         for (Path path : paths) {
             if (path.getShadePct() > minShade) {
+
                 selectedPaths.add(path);
-                minShade = minShade + deltaS;
+                minShade = path.getShadePct() + deltaS;
                 System.out.println("Path: " + path.getId() + " shade: " + path.getShadePct() + "%");
             }
 
