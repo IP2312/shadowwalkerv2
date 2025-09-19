@@ -12,7 +12,7 @@ import java.util.Map;
 public class Util {
 
     public Path toPath(PathResult best, Map<Long, RouteNode> nodes, int pathNr) {
-        Path newPath = new Path(pathNr, new LinkedHashSet<>(), best.cost);
+        Path newPath = new Path(pathNr, new LinkedHashSet<>(), best.cost, best.length);
 
         for (Long id : best.pathIds) {
             newPath.getNodes().add(nodes.get(id));
