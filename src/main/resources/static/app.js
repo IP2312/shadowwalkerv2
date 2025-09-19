@@ -32,7 +32,10 @@
 
         // ---------- Legend control ----------
         let legendControl, legendEl;
-        legendControl = L.control({ position: 'bottomright' });
+        // Instead of position: 'bottomright'
+        const legendPos = window.matchMedia('(max-height: 700px)').matches ? 'topright' : 'bottomright';
+        legendControl = L.control({ position: legendPos });
+
         legendControl.onAdd = function () {
             const div = L.DomUtil.create('div', 'route-legend leaflet-control');
             div.style.background = 'white';

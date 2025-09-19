@@ -38,12 +38,18 @@ public class Navigation {
 
         PriorityQueue<NodeEntry> pq = new PriorityQueue<>(Comparator.comparingDouble(e -> e.f));
         Map<Long, Double> g = new HashMap<>();
+        Map<Long, Double> distance = new HashMap<>();
         Map<Long, Long> parent = new HashMap<>();
         Set<Long> closed = new HashSet<>();
 
-        for (Long id : nodes.keySet()) g.put(id, INF);
+        for (Long id : nodes.keySet())
+        {
+            g.put(id, INF);
+            distance.put(id, INF);
+        }
         g.put(startId, 0.0);
-        pq.add(new NodeEntry(startId, 0.0, calculateH(startId, goalId, nodes)));
+        distance.put(startId, 0.0);
+        pq.add(new NodeEntry(startId, 0.0, calculateH(startId, goalId, nodes),0));
 
         while (!pq.isEmpty()) {
             NodeEntry cur = pq.poll();
@@ -55,7 +61,7 @@ public class Navigation {
                 ArrayList<Long> path = new ArrayList<>();
                 for (Long x = goalId; x != null; x = parent.get(x)) path.add(x);
                 Collections.reverse(path);
-                return new PathResult(g.get(goalId),path);
+                return new PathResult(distance.get(goalId),g.get(goalId),path);
             }
 
             //get list of neighbours foe current node u startNode v targetNode of Edge
@@ -64,16 +70,18 @@ public class Navigation {
                 if (blockedEdges.contains(new Edge(cur.id, v))) continue;
                 if (closed.contains(v)) continue;
 
-                double base = calculateWeight(cur.id, v, nodes);
+                double base = calculateDistanceBetweenNodes(cur.id, v, nodes);
                 double pen  = (exploredEdges != null && exploredEdges.contains(new Edge(cur.id, v)))
                         ? EDGE_PENALTY_METERS : 0.0;
 
+                double totalDistance = distance.get(cur.id) + base;
                 double tentative = g.get(cur.id) + base + pen;
 
                 if (tentative < g.getOrDefault(v, INF)) {
                     g.put(v, tentative);
+                    distance.put(v, totalDistance);
                     parent.put(v, cur.id);
-                    pq.add(new NodeEntry(v, tentative, tentative + calculateH(v, goalId, nodes)));
+                    pq.add(new NodeEntry(v, tentative, tentative + calculateH(v, goalId, nodes),totalDistance));
                 }
             }
         }
@@ -183,9 +191,10 @@ public class Navigation {
                 String sig = signature(cand);
                 if (seen.add(sig)) {
 
-                    double total = pathCostWithPenalty(cand, nodesMap, penaltyEdges);
-
-                    B.add(new PathResult(total, cand));
+                    Map<String,Double> distanceCost = new HashMap<>(pathDistanceCost(cand, nodesMap, penaltyEdges));
+                    double distance = distanceCost.get("distance");
+                    double totalCost = distanceCost.get("cost");
+                    B.add(new PathResult(distance,totalCost, cand));
                 }
             }
 
@@ -209,10 +218,13 @@ public class Navigation {
         final long id;
         final double g;
         final double f;
-        NodeEntry(long id, double g, double f) {
+        final double distance;
+
+        NodeEntry(long id, double g, double f,  double distance) {
             this.id = id;
             this.g = g;
             this.f = f;
+            this.distance = distance;
         }
     }
     private Map<Long, List<Long>> buildAdjacency(List<RoutWay> ways) {
@@ -228,17 +240,17 @@ public class Navigation {
         }
         return adj;
     }
-    private double calculateWeight(long u, long v, Map<Long, RouteNode> nodes) {
+    private double calculateDistanceBetweenNodes(long u, long v, Map<Long, RouteNode> nodes) {
         GeoCoordinate cu = nodes.get(u).getCoordinate();
         GeoCoordinate cv = nodes.get(v).getCoordinate();
         return mapService.haversineDistance(cu, cv);
     }
     private double calculateH(long u, long goal, Map<Long, RouteNode> nodes) {
-        return calculateWeight(u, goal, nodes);
+        return calculateDistanceBetweenNodes(u, goal, nodes);
     }
     private double pathCost(List<Long> ids, Map<Long, RouteNode> nodes) {
         double cost = 0.0;
-        for (int i = 0; i + 1 < ids.size(); i++) cost += calculateWeight(ids.get(i), ids.get(i + 1), nodes);
+        for (int i = 0; i + 1 < ids.size(); i++) cost += calculateDistanceBetweenNodes(ids.get(i), ids.get(i + 1), nodes);
         return cost;
     }
  /*   private ArrayList<GeoCoordinate> toCoords(List<Long> ids, Map<Long, RouteNode> nodes) {
@@ -261,17 +273,22 @@ public class Navigation {
             out.add(new Edge(v, u)); // undirected: penalize both directions
         }
     }
-    private double pathCostWithPenalty(List<Long> ids,
-                                       Map<Long, RouteNode> nodes,
-                                       Set<Edge> penaltyEdges) {
+
+
+    private Map<String,Double> pathDistanceCost(List<Long> ids, Map<Long, RouteNode> nodes, Set<Edge> penaltyEdges) {
+        double distance = 0.0;
         double cost = 0.0;
         for (int i = 0; i + 1 < ids.size(); i++) {
             long u = ids.get(i), v = ids.get(i + 1);
-            double base = calculateWeight(u, v, nodes);
+            double base = calculateDistanceBetweenNodes(u, v, nodes);
             double pen  = penaltyEdges.contains(new Edge(u, v)) ? EDGE_PENALTY_METERS : 0.0;
+            distance += base;
             cost += base + pen;
         }
-        return cost;
+        Map<String,Double> out = new HashMap<>();
+        out.put("distance", distance);
+        out.put("cost", cost);
+        return out;
     }
 
 
