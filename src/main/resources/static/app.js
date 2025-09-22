@@ -22,7 +22,7 @@
         }
         console.log('[leaflet] version', L.version);
 
-        const map = L.map('map').setView([48.31150149550213, 14.29344891170855], 10);
+        const map = L.map('map').setView([48.215772, 16.352614], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
@@ -90,7 +90,7 @@
                         ${dash ? `stroke-dasharray="${dash}"` : ''} stroke-linecap="round" />
                 </svg>`;
         }
-        const fmtKm  = m => (m == null ? "—" : (m/1000).toFixed(2));
+        const fmtM  = m => (m == null ? "—" : (m).toFixed(0));
         const fmtPct = p => (p == null ? "—" : Number(p).toFixed(1));
         const fmt6   = n => Number(n).toFixed(6);
 
@@ -98,7 +98,7 @@
             if (!legendEl) return;
             const rows = routes.map((route, idx) => {
                 const style = polylineStyle(idx);
-                const title = `Route ${idx + 1} · ${fmtKm(route.length)} km · shade ${fmtPct(route.shadowPct)}%`;
+                const title = `Route ${idx + 1} · ${fmtM(route.length)} m · shade ${fmtPct(route.shadowPct)}%`;
                 const swatch = svgSwatch(style);
                 return `
                   <div class="legend-row" style="display:flex; align-items:center; gap:8px; margin:4px 0;">
@@ -323,7 +323,7 @@
 
                 allLatLngs.push(...latlngs);
 
-                const title = `Route ${idx + 1} · ${fmtKm(route.length)} km · shade ${fmtPct(route.shadowPct)}%`;
+                const title = `Route ${idx + 1} · ${fmtM(route.length)} km · shade ${fmtPct(route.shadowPct)}%`;
 
                 const line = L.polyline(latlngs, polylineStyle(idx))
                     .addTo(routeLayer)

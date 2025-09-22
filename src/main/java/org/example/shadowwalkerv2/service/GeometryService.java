@@ -36,31 +36,21 @@ public class GeometryService {
         boolean intersects = building.getPolygon().intersects(line);
         Geometry intersection = intersects ? building.getPolygon().intersection(line) : null;
 
-       /* System.out.println("Intersects? " + intersects);
-        System.out.println("Intersection geometry: " + (intersection != null ? intersection : "—"));
-        System.out.println("Distance: ");*/
 
-
-        //Todo handle no intersection
-        double heightSun = 0;
+        double heightSun;
         if (intersects){
             double distance = mapService.haversineDistance(start, new GeoCoordinate(intersection.getCoordinate().y, intersection.getCoordinate().x));
              heightSun = calculateHeightIncrease(distance, elevation);
 
-            //System.out.println("Sun: " + heightSun);
-            //System.out.println("Building: " + buildingHeight);
             return building.getHeight() > heightSun;
         }
 
-
-        //System.out.println("In the Shadow!!");
         return false;
 
     }
 
 
     public double getBuildingHeight(BuildingWay building){
-        double height;
         if (building.getHeight() <=0) {
             return building.getLevels() * 3.5;
         }
@@ -90,7 +80,7 @@ public class GeometryService {
             return null;
         }
 
-        // Ensure ring is closed (first id == last id)
+        // Ensure Ring is closed (first id == last id)
         boolean closed = ids.size() >= 4 && ids.get(0).equals(ids.get(ids.size() - 1));
         List<Long> ringIds = closed ? ids : new ArrayList<>(ids);
         if (!closed) {

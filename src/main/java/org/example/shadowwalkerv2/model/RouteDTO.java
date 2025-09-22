@@ -1,7 +1,6 @@
 package org.example.shadowwalkerv2.model;
 
 import org.example.shadowwalkerv2.dto.CoordinateDTO;
-import org.locationtech.jts.geom.Coordinate;
 
 import java.util.List;
 

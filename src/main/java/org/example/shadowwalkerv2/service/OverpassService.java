@@ -24,8 +24,6 @@ public class OverpassService {
 
     public OverpassResponse loadRouts(GeoCoordinate start, GeoCoordinate goal) {
         HashMap<String, Double> borders = mapService.calculateBorders(start, goal);
-        //todo sidewalks attached to streets
-        // Build once, reuse %s for the bbox everywhere
         String bbox = String.format(
                 Locale.US, "%.8f, %.8f, %.8f, %.8f",
                 borders.get("sBorder"), borders.get("wBorder"),

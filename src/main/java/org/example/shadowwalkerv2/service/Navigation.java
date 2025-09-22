@@ -11,13 +11,11 @@ import java.util.*;
 public class Navigation {
     private final OverpassService overpassService;
     private final MapService mapService;
-    private final SunService sunService;
     private final Util util;
     private static final double EDGE_PENALTY_METERS = 25.0; // tune 10–50
 
 
-    public Navigation(SunService sunService) {
-        this.sunService = sunService;
+    public Navigation() {
 
         this.overpassService = new OverpassService();
         this.mapService = new MapService();
@@ -42,19 +40,20 @@ public class Navigation {
         Map<Long, Long> parent = new HashMap<>();
         Set<Long> closed = new HashSet<>();
 
-        for (Long id : nodes.keySet())
-        {
-            g.put(id, INF);
-            distance.put(id, INF);
-        }
+//        for (Long id : nodes.keySet())
+//        {
+//            //g.put(id, INF);
+//            //distance.put(id, INF);
+//        }
         g.put(startId, 0.0);
         distance.put(startId, 0.0);
         pq.add(new NodeEntry(startId, 0.0, calculateH(startId, goalId, nodes),0));
 
         while (!pq.isEmpty()) {
             NodeEntry cur = pq.poll();
-            // stale-entry guard
-            if (!Objects.equals(cur.g, g.get(cur.id))) continue;
+            // stale-entry guard if g not equal -> better bath was found not added
+            Double best = g.get(cur.id);
+            if (best == null || cur.g > best) continue;
             if (!closed.add(cur.id)) continue;
 
             if (cur.id == goalId) {
@@ -97,7 +96,7 @@ public class Navigation {
             return routes;
         }
 
-        // 1) Load OSM ways/nodes for the corridor between start & goal
+        // 1) Load OSM ways/nodes for the corridor between start and goal
         OverpassResponse routElements = overpassService.loadRouts(start, goal);
         ArrayList<RouteNode> routeNodes = new ArrayList<>();
         ArrayList<RoutWay> ways = new ArrayList<>();
@@ -182,7 +181,7 @@ public class Navigation {
                     continue;
                 }
 
-                // Combine root spur (avoid duplicating the spur node)
+                // Combine root spur
                 List<Long> cand = new ArrayList<>(root);
                 cand.remove(cand.size() - 1);
                 cand.addAll(spurRes.pathIds);
@@ -214,18 +213,7 @@ public class Navigation {
     }
 
 
-    private static final class NodeEntry {
-        final long id;
-        final double g;
-        final double f;
-        final double distance;
-
-        NodeEntry(long id, double g, double f,  double distance) {
-            this.id = id;
-            this.g = g;
-            this.f = f;
-            this.distance = distance;
-        }
+    private record NodeEntry(long id, double g, double f, double distance) {
     }
     private Map<Long, List<Long>> buildAdjacency(List<RoutWay> ways) {
         Map<Long, List<Long>> adj = new HashMap<>();
@@ -248,16 +236,7 @@ public class Navigation {
     private double calculateH(long u, long goal, Map<Long, RouteNode> nodes) {
         return calculateDistanceBetweenNodes(u, goal, nodes);
     }
-    private double pathCost(List<Long> ids, Map<Long, RouteNode> nodes) {
-        double cost = 0.0;
-        for (int i = 0; i + 1 < ids.size(); i++) cost += calculateDistanceBetweenNodes(ids.get(i), ids.get(i + 1), nodes);
-        return cost;
-    }
- /*   private ArrayList<GeoCoordinate> toCoords(List<Long> ids, Map<Long, RouteNode> nodes) {
-        ArrayList<GeoCoordinate> out = new ArrayList<>(ids.size());
-        for (Long id : ids) out.add(nodes.get(id).getCoordinate());
-        return out;
-    }*/
+
 
     private String signature(List<Long> ids) {
         StringBuilder sb = new StringBuilder();
@@ -266,7 +245,7 @@ public class Navigation {
     }
 
     //Penalties
-    private static void addEdgesOfPathTo(Set<Edge> out, List<Long> ids) {
+    private void addEdgesOfPathTo(Set<Edge> out, List<Long> ids) {
         for (int i = 0; i + 1 < ids.size(); i++) {
             long u = ids.get(i), v = ids.get(i + 1);
             out.add(new Edge(u, v));

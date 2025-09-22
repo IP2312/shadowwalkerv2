@@ -33,11 +33,6 @@ public class RoutController {
         this.sunService = sunService;
     }
 
-//    @GetMapping("/test")
-//    public String test() {
-//        return "test";
-//    }
-
     @GetMapping("/nodes") // consider renaming to /routes
     public List<RouteDTO> getNodes(
             @RequestParam double startLat,
@@ -45,7 +40,7 @@ public class RoutController {
             @RequestParam double endLat,
             @RequestParam double endLon,
             @RequestParam(required = false, name = "time") String timeStr, // <-- raw string
-            @RequestParam(defaultValue = "50") int k
+            @RequestParam(defaultValue = "20") int k
     ) {
         System.out.println("time param raw = " + timeStr); // should print "06:11"
 

@@ -4,13 +4,12 @@ import org.example.shadowwalkerv2.model.GeoCoordinate;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
-import java.util.Map;
 
 @Service
 public class MapService {
 
     public HashMap<String,Double> calculateBorders(GeoCoordinate start, GeoCoordinate goal){
-        //todo   add function to calculate minimum box if very small
+
         double minLat = Math.min(start.getLat(), goal.getLat());
         double maxLat = Math.max(start.getLat(), goal.getLat());
         double minLon = Math.min(start.getLon(), goal.getLon());
@@ -18,7 +17,7 @@ public class MapService {
 
         double marginMeters = haversineDistance(start, goal) * 0.5;
 
-        //  Convert meters → degrees
+        //  Convert meters to degrees
         double midLat = (minLat + maxLat) / 2.0; // use mean latitude for lon scaling
         double marginLatDeg = metersToLatDegrees(marginMeters);
         double marginLonDeg = metersToLonDegrees(marginMeters, midLat);

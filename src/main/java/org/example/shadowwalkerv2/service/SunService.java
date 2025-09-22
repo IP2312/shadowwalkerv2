@@ -6,12 +6,10 @@ import org.locationtech.jts.geom.Polygon;
 import org.shredzone.commons.suncalc.SunPosition;
 import org.springframework.stereotype.Service;
 
-import java.awt.*;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.List;
 import java.util.function.Function;
-import org.locationtech.jts.geom.*;
 
 @Service
 public class SunService {
@@ -52,8 +50,7 @@ public class SunService {
 
         // Shade cache for this run
         RouteNode startNode = paths.get(0).getNodes().iterator().next();
-//    GeoCoordinate rayEnd = calculateLineForSunray(startNode, time);
-//    GeoCoordinate rayStart = startNode.getCoordinate();
+
         double azimuth = getAzimuth(startNode.getCoordinate().getLat(), startNode.getCoordinate().getLon(), time);
         double elevation = getElevation(startNode.getCoordinate().getLat(), startNode.getCoordinate().getLon(), time);
 
@@ -64,12 +61,12 @@ public class SunService {
             BuildingObject buildingObject = new BuildingObject(building.getId(),polygon,height);
             buildingObjects.add(buildingObject);
         }
-        System.out.println(buildingObjects.size());
+        System.out.println("Nr. of buildings: " + buildingObjects.size());
         Map<Long, Boolean> shadedCache = new HashMap<>();
         Function<RouteNode, Boolean> isShaded = rn ->
                 shadedCache.computeIfAbsent(
                         rn.getId(),
-                        id -> checkForShade(rn, buildingObjects, azimuth, elevation, time)
+                        id -> checkForShade(rn, buildingObjects, azimuth, elevation)
                 );
 
 
@@ -88,12 +85,9 @@ public class SunService {
     }
 
 
-    public boolean checkForShade(RouteNode currentNode, HashSet<BuildingObject> buildings, double azimuth, double elevation, ZonedDateTime time) {
-
-
+    public boolean checkForShade(RouteNode currentNode, HashSet<BuildingObject> buildings, double azimuth, double elevation) {
         GeoCoordinate rayStart = currentNode.getCoordinate();
-        GeoCoordinate rayEnd = calculateLineForSunray(currentNode, time, azimuth);
-//todo return if true
+        GeoCoordinate rayEnd = calculateLineForSunray(currentNode, azimuth);
         for (BuildingObject building : buildings) {
             if (geometryService.intersection(rayStart, rayEnd, building, elevation)) {
                 return true;
@@ -102,11 +96,10 @@ public class SunService {
         return false;
     }
 
-    public GeoCoordinate calculateLineForSunray(RouteNode node, ZonedDateTime time, double azimuth) {
+    public GeoCoordinate calculateLineForSunray(RouteNode node, double azimuth) {
         double lat = node.getCoordinate().getLat();
         double lon = node.getCoordinate().getLon();
-        //System.out.println("Azimuth: " + azimuth);
-        //System.out.println("Elevation" + getElevation(lat,lon,time));
+
         double distanceMeters = 200;
         double R = 6371000.0; // Earth radius in meters
         double bearing = Math.toRadians(azimuth);
