@@ -20,6 +20,7 @@ public class Navigation {
         this.overpassService = new OverpassService();
         this.mapService = new MapService();
         this.util = new Util();
+
     }
     private static final double INF = Double.POSITIVE_INFINITY;
 
