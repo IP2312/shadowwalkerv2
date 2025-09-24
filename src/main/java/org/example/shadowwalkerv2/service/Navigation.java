@@ -41,11 +41,6 @@ public class Navigation {
         Map<Long, Long> parent = new HashMap<>();
         Set<Long> closed = new HashSet<>();
 
-//        for (Long id : nodes.keySet())
-//        {
-//            //g.put(id, INF);
-//            //distance.put(id, INF);
-//        }
         g.put(startId, 0.0);
         distance.put(startId, 0.0);
         pq.add(new NodeEntry(startId, 0.0, calculateH(startId, goalId, nodes),0));
